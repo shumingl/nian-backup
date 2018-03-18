@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.onebank.pmts.report">
+
+    <select id="hstjaccount" parameterType="java.util.HashMap" resultType="java.util.HashMap">
+        select to_char(to_date('${period}', 'yyyymmdd') - 1, 'yyyymmdd') "startdate",
+        '${period}' "enddate"
+        from dual
+        where rownum &lt;= 1
+	</select>
+
+    <select id="hstjaccountlist" parameterType="String" resultType="java.util.HashMap">
+		select rownum||'' "rowidx",
+			   a.cust_name "cust_name",
+			   b.trade_code "trade_code",
+			   to_char(to_date(b.set_date, 'yyyymmdd'), 'yyyy-mm-dd') || ' ' ||
+			   b.set_time "succ_time",
+			   a.cust_cert "cust_cert",
+			   c.agent_userid "agent_userid",
+			   a.cust_mob "bank_mobile",
+			   c.bank_name "bank_name",
+			   a.bank_acc "bank_acc",
+			   a.cust_no "cust_no"
+		  from custominfo a
+		  join tran_code_info#gp b
+			on b.cust_code = a.cust_no
+          left join pmts_agentcustominfo c
+            on c.cust_no = a.cust_no
+		 where to_date(b.set_date || ' ' || b.set_time, 'yyyymmdd hh24:mi:ss') between
+			   to_date('${startdate} 17:30:00', 'yyyymmdd hh24:mi:ss') and
+			   to_date('${enddate} 17:30:00', 'yyyymmdd hh24:mi:ss')
+		 order by "succ_time" desc
+	</select>
+
+	<update id="saveAgentCustominfo" parameterType="java.util.HashMap">
+		merge into pmts_agentcustominfo a
+		using (select #{custNo} cust_no,
+					  #{userName} cust_name,
+					  #{idCard} cust_cert,
+					  #{bankMobile} cust_mobile,
+					  #{tradeNo} trade_code,
+					  #{bankType} bank_name,
+					  #{bankCardNo} bank_acct,
+					  'hstj' agent_code,
+					  #{userId} agent_userid,
+					  #{oaSuccTime} succ_time
+				 from dual
+				where rownum &lt;= 1) b
+		on (b.cust_no = a.cust_no)
+		when matched then
+		  update
+			 set c.cust_name    = a.cust_name,
+				 c.cust_cert    = a.cust_cert,
+				 c.cust_mobile  = a.cust_mobile,
+				 c.trade_code   = a.trade_code,
+				 c.bank_code    = substr(a.bank_acct, 1, 6),
+				 c.bank_name    = a.bank_name,
+				 c.bank_acct    = a.bank_acct,
+				 c.agent_code   = a.agent_code,
+				 c.agent_userid = a.agent_userid,
+				 c.succ_time    = nvl2(a.succ_time,
+									   to_date(a.succ_time, 'yyyy-mm-dd hh24:mi:ss'),
+									   sysdate)
+		when not matched then
+		  insert
+			(c.cust_no,
+			 c.cust_name,
+			 c.cust_cert,
+			 c.cust_mobile,
+			 c.trade_code,
+			 c.bank_code,
+			 c.bank_name,
+			 c.bank_acct,
+			 c.agent_code,
+			 c.agent_userid,
+			 c.succ_time)
+		  values
+			(a.cust_no,
+			 a.cust_name,
+			 a.cust_cert,
+			 a.cust_mobile,
+			 a.trade_code,
+			 substr(bank_acct, 1, 6),
+			 a.bank_name,
+			 a.bank_acct,
+			 a.agent_code,
+			 a.agent_userid,
+			 nvl2(a.succ_time,
+				  to_date(a.succ_time, 'yyyy-mm-dd hh24:mi:ss'),
+				  sysdate))
+	</update>
+
+</mapper>

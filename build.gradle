@@ -1,0 +1,37 @@
+group 'nian.so'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply from: "$rootProject.projectDir/dependencies.gradle"
+apply from: "$rootProject.projectDir/utils.gradle"
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+    mavenCentral()
+}
+
+dependencies {
+    compile(
+            libraries."spring-context",
+            libraries."spring-jdbc",
+            libraries."mybatis",
+            libraries."mybatis-spring",
+            libraries."mysql-connector-java",
+            libraries."slf4j-api",
+            libraries."logback-core",
+            libraries."logback-access",
+            libraries."logback-classic",
+            libraries."logback-ext-spring",
+            libraries."jackson-databind",
+            libraries."freemarker",
+            libraries."httpclient",
+            libraries."httpmime",
+            libraries."joda-time",
+            libraries."commons-codec"
+    )
+
+    testCompile libraries."junit"
+}
