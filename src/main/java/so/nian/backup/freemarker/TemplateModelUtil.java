@@ -23,7 +23,7 @@ public class TemplateModelUtil {
 
 	public static ThreadLocal<DateFormat> SHORT_DATE_FORMAT = new ThreadLocal<DateFormat>();
 	public static final int               SHORT_DATE_LENGTH = 10;
-	
+
 	static {
 		FULL_DATE_FORMAT.set(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 		SHORT_DATE_FORMAT.set(new SimpleDateFormat("yyyy-MM-dd"));

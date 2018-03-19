@@ -97,6 +97,8 @@ ext.libraries = [
         //
         "junit"                    : "junit:junit:${versions.junit}",
         "sqlite-jdbc"              : "org.xerial:sqlite-jdbc:3.21.0.1",
-        "mysql-connector-java"     : "mysql:mysql-connector-java:6.0.6"
+        "mysql-connector-java"     : "mysql:mysql-connector-java:6.0.6",
+
+        "common-lang3"             : "org.apache.commons:commons-lang3:3.7"
 
 ]

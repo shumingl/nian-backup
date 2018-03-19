@@ -15,13 +15,14 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.springframework.core.io.ClassPathResource;
+import so.nian.backup.config.AppConfig;
 import so.nian.backup.utils.StringUtil;
 
 public class ReportTemplateFactory {
 
     private Configuration configuration;
 
-    private String encoding = "UTF-8";
+    private String encoding = AppConfig.getFreemarkerTemplateEncode();
     private String templatePath = "";
 
     public String getEncoding() {

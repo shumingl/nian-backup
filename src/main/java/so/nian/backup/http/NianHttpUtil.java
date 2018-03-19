@@ -1,6 +1,8 @@
 package so.nian.backup.http;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -25,6 +27,7 @@ public class NianHttpUtil {
     public static final Map<String, String> URLS = new HashMap<>();
     public static final Map<String, String> PROC = new HashMap<>();
     private static final ExpressionParser parser = ExpressionParser.getDefault();
+    private static RequestConfig requestConfig = null;
 
     static {
 
@@ -39,12 +42,12 @@ public class NianHttpUtil {
         URLS.put("info", "http://api.nian.so/user/${euid}?uid=${uid}&shell=${shell}");
         URLS.put("list", "http://api.nian.so/user/${euid}/dreams?uid=${uid}&shell=${shell}");
         URLS.put("data", "http://api.nian.so/v2/multidream/${dreamid}?sort=desc&page=${page}&uid=${uid}&shell=${shell}");
-        URLS.put("cmts", "http://api.nian.so/step/${stepid}/comments??page=${page}&uid=${euid}&myuid=${uid}");
-        URLS.put("like", "http://api.nian.so/v2/step/${stepid}/like/users?page=${page}&uid=${euid}&myuid=${uid}");
+        URLS.put("cmts", "http://api.nian.so/step/${stepid}/comments?page=${page}&uid=${uid}&shell=${shell}");
+        URLS.put("like", "http://api.nian.so/v2/step/${stepid}/like/users?page=${page}&uid=${uid}&shell=${shell}");
         URLS.put("care", "http://nian.so/api/user_fo_list2.php?page=${page}&uid=${euid}&myuid=${uid}");
         URLS.put("fans", "http://nian.so/api/user_foed_list2.php?page=${page}&uid=${euid}&myuid=${uid}");
         URLS.put("head", "http://img.nian.so/head/${uid}.jpg");
-        URLS.put("image", "http://img.nian.so/dream/${image}");
+        URLS.put("step", "http://img.nian.so/step/${image}");
 
         PROC.put("login", "login");
         PROC.put("info", "info?${uid}/${shell}/${euid}");
@@ -57,6 +60,12 @@ public class NianHttpUtil {
         PROC.put("head", "head?${uid}");
         PROC.put("image", "image?${image}");
 
+        requestConfig = RequestConfig.custom()
+                .setConnectTimeout(100000)
+                //.setConnectionRequestTimeout(Config.getInt("httpclient.request.timeout"))
+                //.setSocketTimeout(Config.getInt("httpclient.socket.timeout"))
+                //.setProxy(new HttpHost("127.0.0.1", 8888))
+                .build();
     }
 
     private static void FillHttpHeaders(HttpUriRequest request) {
@@ -136,7 +145,7 @@ public class NianHttpUtil {
         }
     }
 
-    public static HttpResultEntity list(String euid) {
+    public static HttpResultEntity dreams(String euid) {
         try {
             String url = URLS.get("list");
             Map<String, String> parameters = new HashMap<>();
@@ -157,7 +166,7 @@ public class NianHttpUtil {
         }
     }
 
-    public static HttpResultEntity data(String dreamid, int page) {
+    public static HttpResultEntity steps(String dreamid, int page) {
         try {
             String url = URLS.get("data");
             Map<String, String> parameters = new HashMap<>();
@@ -287,10 +296,13 @@ public class NianHttpUtil {
         try {
             // 检查METHOD
             HttpUriRequest request = null;
-            if ("get".equalsIgnoreCase(method))
+            if ("get".equalsIgnoreCase(method)) {
                 request = new HttpGet(url);
+                ((HttpGet) request).setConfig(requestConfig);
+            }
             if ("post".equalsIgnoreCase(method)) {
                 request = new HttpPost(url);
+                ((HttpPost) request).setConfig(requestConfig);
                 if (!StringUtil.isNullOrEmpty(body)) {
                     // HTTP BODY
                     HttpEntity httpEntity = new StringEntity(body);

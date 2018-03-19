@@ -13,20 +13,24 @@ import java.util.*;
 public class AppConfig {
     //private static Logger logger = LoggerFactory.getLogger(AppConfig.class);
     private static LogConsole logger = LogConsole.getInstance();
+    private static Map<String, Object> configTemplates;
     private static boolean initialize = false;
     private static Map<String, String> config;
     private static Map<String, String> configMap;
     private static Properties properties;
     private static final String configFile = "config/app.properties";
-    private static String logbackConfig = "logback.configfile";
-    private static String logbackFilePath = "logback.logbasepath";
-    private static String nianViewsBase = "nian.views.base";
-    private static String nianImageBase = "nian.image.base";
+    private static final String logbackConfig = "logback.configfile";
+    private static final String logbackFilePath = "logback.logbasepath";
+    private static final String nianViewsBase = "nian.views.base";
+    private static final String nianImageBase = "nian.image.base";
+    private static final String freemarkerTemplatePath = "freemarker.template.path";
+    private static final String freemarkerTemplateEncode = "freemarker.template.encode";
+    private static final String applicationFontPath = "application.fontpath";
 
-    private static String dataSourceDriver = "dataSource.driver";
-    private static String dataSourceUrl = "dataSource.url";
-    private static String dataSourceUser = "dataSource.username";
-    private static String dataSourcePass = "dataSource.password";
+    private static final String dataSourceDriver = "dataSource.driver";
+    private static final String dataSourceUrl = "dataSource.url";
+    private static final String dataSourceUser = "dataSource.username";
+    private static final String dataSourcePass = "dataSource.password";
 
     public static boolean initialize() {
         if (initialize)
@@ -41,10 +45,15 @@ public class AppConfig {
             configMap.put(nianViewsBase, "念视图根路径");
             configMap.put(nianImageBase, "念图片根路径");
 
+            configMap.put(freemarkerTemplatePath, "FreeMarker模板路径");
+            configMap.put(freemarkerTemplateEncode, "FreeMarker模板编码");
+            configMap.put(applicationFontPath, "应用程序字体路径");
+            /*
             configMap.put(dataSourceDriver, "数据库驱动类");
             configMap.put(dataSourceUrl, "数据库连接地址");
             configMap.put(dataSourceUser, "数据库用户");
             configMap.put(dataSourcePass, "数据库密码");
+            */
 
             ClassPathResource resource = new ClassPathResource(configFile);
             properties.load(resource.getInputStream());
@@ -90,6 +99,18 @@ public class AppConfig {
         return config.get(logbackFilePath);
     }
 
+    public static String getFreemarkerTemplatePath() {
+        return config.get(freemarkerTemplatePath);
+    }
+
+    public static String getFreemarkerTemplateEncode() {
+        return config.get(freemarkerTemplateEncode);
+    }
+
+    public static String getApplicationFontPath() {
+        return config.get(applicationFontPath);
+    }
+
     public static String getDataSourceDriver() {
         return config.get(dataSourceDriver);
     }
@@ -106,4 +127,11 @@ public class AppConfig {
         return config.get(dataSourcePass);
     }
 
+    public static String getNianViewsBase() {
+        return config.get(nianViewsBase);
+    }
+
+    public static String getNianImageBase() {
+        return config.get(nianImageBase);
+    }
 }

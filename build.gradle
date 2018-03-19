@@ -30,7 +30,8 @@ dependencies {
             libraries."httpclient",
             libraries."httpmime",
             libraries."joda-time",
-            libraries."commons-codec"
+            libraries."commons-codec",
+            libraries."common-lang3"
     )
 
     testCompile libraries."junit"

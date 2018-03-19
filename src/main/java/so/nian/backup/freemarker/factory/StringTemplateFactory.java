@@ -11,7 +11,6 @@ import java.io.StringWriter;
 import java.util.Locale;
 import java.util.Map;
 
-import cn.onebank.pmts.core.config.AppConfig;
 import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -106,7 +105,7 @@ public class StringTemplateFactory {
      * 注册配置文件中的FreeMarker 字符串模板
      *
      * @throws IOException
-     */
+     * /
     public void registerConfigTemplates() throws IOException {
         loadFunctionTemplate();
         Map<String, Object> tpls = AppConfig.getConfigTemplates();
@@ -118,7 +117,7 @@ public class StringTemplateFactory {
             stringTemplateLoader.putTemplate(configKey, tplContent);
         }
         configuration.setTemplateLoader(stringTemplateLoader);
-    }
+    }*/
 
     /**
      * 生成配置参数值

@@ -22,17 +22,6 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="DMBLOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${logFileBase}/${dmbLogFile}.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <FileNamePattern>${logFileBase}/${dmbLogFile}.%d{yyyy-MM-dd}.log</FileNamePattern>
-            <MaxHistory>30</MaxHistory>
-        </rollingPolicy>
-        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>${logTextPattern}</pattern>
-        </encoder>
-    </appender>
-
     <logger name="org.springframework" level="info"/>
     <logger name="java.sql" level="info"/>
     <logger name="freemarker.template" level="warn"/>

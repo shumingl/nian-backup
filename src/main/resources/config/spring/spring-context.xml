@@ -14,7 +14,6 @@
 
     <bean class="so.nian.backup.utils.spring.ContextUtil"/>
 
-    <bean id="reportTemplateFactory" autowire="byName"
-          class="so.nian.backup.freemarker.factory.ReportTemplateFactory"/>
+    <bean id="templateFactory" autowire="byName" class="so.nian.backup.freemarker.factory.ReportTemplateFactory"/>
 
 </beans>
