@@ -1,5 +1,6 @@
 <#assign fcomments="so.nian.backup.freemarker.function.NianStepComments"?new()/>
-<#assign fdateformat="so.nian.backup.freemarker.function.NianDateFromat"?new()/>
+<#assign fdate="so.nian.backup.freemarker.function.NianDateFromat"?new()/>
+<#assign fimage="so.nian.backup.freemarker.function.NianStepImages"?new()/>
 <!DOCTYPE html>
 <html>
 <head>
@@ -113,7 +114,7 @@
         <div class="head">
             <span class="headimage"><img src="http://img.nian.so/dream/${dream.image}!dream"/></span>
             <span class="headnick">${dream.user}</span>
-            <p class="nian_userinfo">进展(${dream.step}), 赞(${dream.like_step}), 听众(${dream.followers}) ${fdateformat(dream.lastdate)}</p>
+            <p class="nian_userinfo">进展(${dream.step}), 赞(${dream.like_step}), 听众(${dream.followers}) ${fdate(dream.lastdate)}</p>
         </div>
         <p class="nian_booktitle">${dream.title}</p>
         <p class="nian_booknotice">${dream.content}</p>
@@ -124,7 +125,7 @@
                 <div class="head">
                     <span class="headimage"><img src="http://img.nian.so/head/${dream.uid}.jpg!dream"/></span>
                     <span class="headnick">${step.user}</span>
-                    <p class="nian_userinfo">评论(${step.comments}), 赞(${step.comments}), ${fdateformat(step.lastdate)}</p>
+                    <p class="nian_userinfo">评论(${step.comments}), 赞(${step.comments}), ${fdate(step.lastdate)}</p>
                 </div>
                 <#if step.images?size gt 0>
                     <ul class="picture-grid image_tooltip">
@@ -140,7 +141,7 @@
                     <#if comments?size gt 0>
                         <hr style="width:400px;margin-left: 0px;text-align: left;"/>
                         <#list comments as comment>
-                            <p class="nian_comment">[${fdateformat(comment.lastdate)}] ${comment.user}: ${comment.content}</p>
+                            <p class="nian_comment">[${fdate(comment.lastdate)}] ${comment.user}: ${comment.content}</p>
                         </#list>
                     </#if>
                 </#if>
