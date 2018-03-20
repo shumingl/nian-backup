@@ -276,21 +276,6 @@ public class NianHttpUtil {
         }
     }
 
-    public static void downloadImage(String image, boolean ishead) {
-        Map<String, String> parameters = new HashMap<>();
-        parameters.putAll(LOGINFO);
-        String url = "";
-        if (ishead) {
-            url = URLS.get("head");
-            parameters.put("uid", image);
-        } else {
-            url = URLS.get("image");
-            parameters.put("image", image);
-        }
-        url = parser.parse(url, parameters);
-
-    }
-
     public static HttpResultEntity exec(String method, String url, String body, Map<String, String> headers) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
@@ -322,7 +307,8 @@ public class NianHttpUtil {
 
         } catch (Exception e) {
             logger.error(String.format("HTTP请求异常：%s", e.getMessage()));
-            return new HttpResultEntity(false, e.getMessage());
+            throw new RuntimeException(e);
+            // return new HttpResultEntity(false, e.getMessage());
         } finally {
             NianHttpUtil.closeQuitely(httpClient);
         }

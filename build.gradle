@@ -16,10 +16,6 @@ repositories {
 dependencies {
     compile(
             libraries."spring-context",
-            libraries."spring-jdbc",
-            libraries."mybatis",
-            libraries."mybatis-spring",
-            libraries."mysql-connector-java",
             libraries."slf4j-api",
             libraries."logback-core",
             libraries."logback-access",

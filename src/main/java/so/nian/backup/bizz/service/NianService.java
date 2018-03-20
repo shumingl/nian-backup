@@ -5,6 +5,8 @@ import so.nian.backup.config.AppConfig;
 import so.nian.backup.freemarker.factory.ReportTemplateFactory;
 import so.nian.backup.http.HttpResultEntity;
 import so.nian.backup.http.NianHttpUtil;
+import so.nian.backup.http.NianImageDownload;
+import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.spring.ContextUtil;
 
 import java.io.File;
@@ -20,7 +22,7 @@ public class NianService {
     }
 
     public void findDreamList(String userid) {
-        NianHttpUtil.LOGINFO.put("uid", userid);
+        NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
         System.out.printf("findDreamList(%s)\n", userid);
@@ -34,6 +36,7 @@ public class NianService {
                 }
             }
         }
+        NianImageDownload.shutdown();
         System.out.printf("findDreamList(%s), DONE.\n", userid);
     }
 

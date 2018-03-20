@@ -16,7 +16,6 @@ public class NianStepComments implements TemplateMethodModelEx {
         SimpleScalar pStepId = (SimpleScalar) arguments.get(0);
         if (pStepId != null) {
             String stepId = pStepId.getAsString();
-            System.out.printf("NianStepComments(%s)\n", stepId);
             int page = 1;
             while (true) {
                 HttpResultEntity entity = NianHttpUtil.comments(stepId, page);

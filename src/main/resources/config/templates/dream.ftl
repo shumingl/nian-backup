@@ -111,8 +111,8 @@
 <body>
 <div class="grid_wrapper">
     <div class="textblock">
-        <div class="head">
-            <span class="headimage"><img src="http://img.nian.so/dream/${dream.image}!dream"/></span>
+        <div class="head"><#assign ret=fimage('dream', dream.image)/>
+            <span class="headimage"><a href="images/dream/${dream.image}"><img src="images/thumbs/${dream.image}"/></a></span>
             <span class="headnick">${dream.user}</span>
             <p class="nian_userinfo">进展(${dream.step}), 赞(${dream.like_step}), 听众(${dream.followers}) ${fdate(dream.lastdate)}</p>
         </div>
@@ -122,15 +122,16 @@
     <#if steps?size gt 0>
         <#list steps as step>
             <div class="textblock">
-                <div class="head">
-                    <span class="headimage"><img src="http://img.nian.so/head/${dream.uid}.jpg!dream"/></span>
+                <div class="head"><#assign ret=fimage('head', dream.uid + '.jpg')/>
+                    <span class="headimage"><a href="images/head/${dream.uid}.jpg"><img src="images/thumbs/${dream.uid}.jpg"/></a></span>
                     <span class="headnick">${step.user}</span>
                     <p class="nian_userinfo">评论(${step.comments}), 赞(${step.comments}), ${fdate(step.lastdate)}</p>
                 </div>
                 <#if step.images?size gt 0>
                     <ul class="picture-grid image_tooltip">
                         <#list step.images as image>
-                            <li><img src="http://img.nian.so/step/${image.path}" rectinfo="${image.width }x${image.height}" /></li>
+                            <#assign ret=fimage('step', image.path)/>
+                            <li><a href="images/step/${image.path}"><img src="images/thumbs/${image.path}" /></a></li>
                         </#list>
                     </ul>
                 </#if>
@@ -147,6 +148,7 @@
                 </#if>
                 <!--这里需要读取点赞的人-->
             </div>
+            <#if step?index % 20 == 0><#flush /></#if>
         </#list>
     </#if>
 </div>

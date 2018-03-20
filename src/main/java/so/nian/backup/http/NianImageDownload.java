@@ -8,21 +8,21 @@ import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.config.AppConfig;
+import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.StringUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class NianImageDownload {
 
-    private static Logger logger = LoggerFactory.getLogger(NianHttpUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(NianImageDownload.class);
 
     private static RequestConfig requestConfig = null;
-    private static ExecutorService threadPool = Executors.newFixedThreadPool(100);
+    private static ExecutorService threadPool = null;
 
     static {
 
@@ -32,34 +32,44 @@ public class NianImageDownload {
                 //.setSocketTimeout(Config.getInt("httpclient.socket.timeout"))
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-    }
-
-    public static ExecutorService getThreadPool() {
-        return threadPool;
+        //threadPool = Executors.newFixedThreadPool(50);
+        threadPool = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
     }
 
     public static void download(String type, String image) {
-        threadPool.execute(new NianImageDownloadWorker(type, image));
+        String path = AppConfig.getNianImageBase();
+        String imagepath = StringUtil.generatePath(path, type, image);
+        File imagefile = new File(imagepath);
+        if (!imagefile.exists() || imagefile.length() == 0) {
+            threadPool.execute(new NianImageDownloadWorker(type, image));
+        }
+    }
+
+    public static void shutdown() {
+        while (!threadPool.isTerminated()) {
+            threadPool.shutdown();
+        }
     }
 
     public static HttpResultEntity downloadImage(String type, String image) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
-            // head/step/dream/cover
-            String url = String.format("http://img.nian.so/%s/%s", type, image);
-            // 检查METHOD
-            HttpGet request = new HttpGet(url);
-            request.setConfig(requestConfig);
-            // 填充HTTP头
-            request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
-            CloseableHttpResponse response = httpClient.execute(request);
             String path = AppConfig.getNianImageBase();
             String imagepath = StringUtil.generatePath(path, type, image);
             File imagefile = new File(imagepath);
 
             // 文件不存在则下载图片
-            if (!imagefile.exists() || imagefile.length() == 0)
-                write2file(response.getEntity().getContent(), imagefile);
+            if (!imagefile.exists() || imagefile.length() == 0) {
+                // head/step/dream/cover
+                String url = String.format("http://img.nian.so/%s/%s", type, image);
+                // 检查METHOD
+                HttpGet request = new HttpGet(url);
+                request.setConfig(requestConfig);
+                // 填充HTTP头
+                request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
+                CloseableHttpResponse response = httpClient.execute(request);
+                FileUtil.write2file(response.getEntity().getContent(), imagefile);
+            }
             return new HttpResultEntity(true, "图片下载成功：" + imagepath);
 
         } catch (Exception e) {
@@ -73,48 +83,36 @@ public class NianImageDownload {
     public static HttpResultEntity downloadThumbs(String type, String image) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
-            // head/step/dream/cover
-            String suffix = "";
-            if ("head".equals(type)) suffix = "dream";
-            if ("step".equals(type)) suffix = "200x";
-            if ("cover".equals(type)) suffix = "cover";
-            if ("dream".equals(type)) suffix = "dream";
-
-            String url = String.format("http://img.nian.so/%s/%s!%s", type, image, suffix);
-            // 检查METHOD
-            HttpGet request = new HttpGet(url);
-            request.setConfig(requestConfig);
-            // 填充HTTP头
-            request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
-            CloseableHttpResponse response = httpClient.execute(request);
             String path = AppConfig.getNianImageBase();
             String imagepath = StringUtil.generatePath(path, "thumbs", image);
             File imagefile = new File(imagepath);
 
             // 文件不存在则下载图片
-            if (!imagefile.exists() || imagefile.length() == 0)
-                write2file(response.getEntity().getContent(), imagefile);
+            if (!imagefile.exists() || imagefile.length() == 0) {
+                // head/step/dream/cover
+                String suffix = "";
+                if ("head".equals(type)) suffix = "dream";
+                if ("step".equals(type)) suffix = "200x";
+                if ("cover".equals(type)) suffix = "cover";
+                if ("dream".equals(type)) suffix = "dream";
+
+                String url = String.format("http://img.nian.so/%s/%s!%s", type, image, suffix);
+                // 检查METHOD
+                HttpGet request = new HttpGet(url);
+                request.setConfig(requestConfig);
+                // 填充HTTP头
+                request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
+                CloseableHttpResponse response = httpClient.execute(request);
+                FileUtil.write2file(response.getEntity().getContent(), imagefile);
+            }
             return new HttpResultEntity(true, "图片下载成功：" + imagepath);
 
         } catch (Exception e) {
-            logger.error(String.format("图片下载异常：%s", e.getMessage()));
+            logger.error(String.format("图片下载异常[thumbs:%s/%s]：[%s]%s", type, image, e.getClass().getCanonicalName(), e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
             NianHttpUtil.closeQuitely(httpClient);
         }
-    }
-
-    private static void write2file(InputStream istream, File file) throws IOException {
-        FileOutputStream fostream = new FileOutputStream(file);
-        int ret;
-        byte[] buffer = new byte[8192];
-        while ((ret = istream.read(buffer)) != -1) {
-            //System.out.printf("ret=%s\n", ret);
-            if (ret > 0)
-                fostream.write(buffer, 0, ret);
-        }
-        fostream.flush();
-        fostream.close();
     }
 
 }
@@ -130,17 +128,22 @@ class NianImageDownloadWorker extends Thread {
         this.image = image;
     }
 
+    @Override
     public void run() {
         try {
-            HttpResultEntity imageEntity = NianImageDownload.downloadImage(type, image);
-            HttpResultEntity thumbsEntity = NianImageDownload.downloadImage(type, image);
-            if (imageEntity.isSuccess() && thumbsEntity.isSuccess()) {
-                logger.info(String.format("SUCC: type=[%s],image=[%s]", type, image));
+            HttpResultEntity thumbsEntity = NianImageDownload.downloadThumbs(type, image);
+            if (thumbsEntity.isSuccess()) {
+                HttpResultEntity imageEntity = NianImageDownload.downloadImage(type, image);
+                if (imageEntity.isSuccess()) {
+                    logger.info(String.format("SUCC: image=[%s/%s]", type, image));
+                } else {
+                    logger.info(String.format("FAIL: image=[%s/%s][%s]", type, image, imageEntity.getMessage()));
+                }
             } else {
-                logger.info(String.format("FAIL: type=[%s],image=[%s][%s/%s]", type, image, imageEntity.getMessage(), thumbsEntity.getMessage()));
+                logger.info(String.format("FAIL: image=[thumbs:%s/%s][%s]", type, image, thumbsEntity.getMessage()));
             }
         } catch (Exception e) {
-            logger.info(String.format("FAIL: type=[%s],image=[%s][%s]", type, image, e.getMessage()));
+            logger.info(String.format("FAIL: image=[%s/%s][%s]", type, image, e.getMessage()));
         }
     }
 }
