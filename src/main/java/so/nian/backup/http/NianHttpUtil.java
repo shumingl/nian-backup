@@ -111,12 +111,6 @@ public class NianHttpUtil {
             url = parser.parse(url, parameters);
             logger.info(String.format("HTTP [URL=%s, PARAMETERS=%s]", url, parameters));
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("PROCESS ERROR[%s]：%s", type, e.getMessage()));
@@ -132,12 +126,6 @@ public class NianHttpUtil {
             parameters.put("euid", euid);
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取个人信息异常：%s", e.getMessage()));
@@ -153,15 +141,9 @@ public class NianHttpUtil {
             parameters.put("euid", euid);
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取记本列表异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取记本列表异常[%s]：%s", euid, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -175,15 +157,9 @@ public class NianHttpUtil {
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取记本列表异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取记本进展异常[%s,%d]：%s", dreamid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -197,15 +173,9 @@ public class NianHttpUtil {
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取记本列表异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取进展异评论常[%s,%d]：%s", stepid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -219,15 +189,9 @@ public class NianHttpUtil {
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取记本列表异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取点赞异常[%s,%d]：%s", stepid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -241,15 +205,9 @@ public class NianHttpUtil {
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取关注异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取关注异常[%s,%d]：%s", euid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -263,15 +221,9 @@ public class NianHttpUtil {
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
             HttpResultEntity resultEntity = exec("get", url, null, null);
-            if (resultEntity.isSuccess()) {
-                Map<String, Object> map = resultEntity.getResponseMap();
-                if (map != null && map.containsKey("data")) {
-                    Map<String, Object> data = (Map<String, Object>) map.get("data");
-                }
-            }
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取听众异常：%s", e.getMessage()));
+            logger.error(String.format("[NIAN]获取听众异常[%s,%d]：%s", euid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }

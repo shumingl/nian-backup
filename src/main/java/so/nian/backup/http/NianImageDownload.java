@@ -29,7 +29,7 @@ public class NianImageDownload {
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(60000)
                 .setConnectionRequestTimeout(300000)
-                .setSocketTimeout(600000)
+                .setSocketTimeout(1800000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
         //threadPool = Executors.newFixedThreadPool(50);
@@ -45,7 +45,7 @@ public class NianImageDownload {
         }
     }
 
-    public static void shutdown() {
+    public static void closewait() {
         while (!threadPool.isTerminated()) {
             threadPool.shutdown();
         }
@@ -73,7 +73,7 @@ public class NianImageDownload {
             return new HttpResultEntity(true, "图片下载成功：" + imagepath);
 
         } catch (Exception e) {
-            logger.error(String.format("图片下载异常：%s", e.getMessage()));
+            logger.error(String.format("图片下载异常[images:%s/%s]：%s", type, image, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
             NianHttpUtil.closeQuitely(httpClient);
@@ -137,7 +137,7 @@ class NianImageDownloadWorker extends Thread {
                 if (imageEntity.isSuccess()) {
                     logger.info(String.format("SUCC: image=[%s/%s]", type, image));
                 } else {
-                    logger.info(String.format("FAIL: image=[%s/%s][%s]", type, image, imageEntity.getMessage()));
+                    logger.info(String.format("FAIL: image=[images:%s/%s][%s]", type, image, imageEntity.getMessage()));
                 }
             } else {
                 logger.info(String.format("FAIL: image=[thumbs:%s/%s][%s]", type, image, thumbsEntity.getMessage()));

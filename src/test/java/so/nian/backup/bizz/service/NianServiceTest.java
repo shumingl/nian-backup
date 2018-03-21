@@ -5,8 +5,6 @@ import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.http.NianImageDownload;
 import so.nian.backup.startup.NianBackupStartup;
 
-import static org.junit.Assert.*;
-
 public class NianServiceTest {
     @Test
     public void dealInfo() throws Exception {
@@ -31,8 +29,8 @@ public class NianServiceTest {
         //service.findDreams("33740");//迟到千年
         //service.findDreams("545196");//南迦南
         //service.findDreams("820090");//柳莫卿
-        //--service.findDreams("312870");//陈阿苗
-        service.findDreams("82273");//球球糖本球
+        service.findDreams("312870");//陈阿苗
+        //service.findDreams("82273");//球球糖本球
         //service.findDreams("31305");//董东栋
         NianBackupStartup.shutdown();
     }
@@ -57,7 +55,7 @@ public class NianServiceTest {
         service.dealDream("3801522");
         service.dealDream("3875526");
 
-        NianImageDownload.shutdown();
+        NianImageDownload.closewait();
         NianBackupStartup.shutdown();
     }
 

@@ -47,7 +47,7 @@ public class NianService {
             logger.error(String.format("[%s]下载梦想清单失败：%s", userid, entity.getMessage()));
         }
         logger.info(String.format("FindDreams[%s], DONE.", userid));
-        NianImageDownload.shutdown();
+        NianImageDownload.closewait();
     }
 
     public void dealDream(String dreamid) {

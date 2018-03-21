@@ -3,8 +3,6 @@ package so.nian.backup.http;
 import org.junit.Test;
 import so.nian.backup.startup.NianBackupStartup;
 
-import java.util.concurrent.ExecutorService;
-
 public class NianDownloadImageTest {
     @Test
     public void downloadImage() throws Exception {
@@ -30,46 +28,15 @@ public class NianDownloadImageTest {
     public void download() throws Exception {
         NianBackupStartup.startup();
         //NianImageDownload.download("cover", "142171_1484715118.jpg");
-        NianImageDownload.downloadThumbs("step", "31305_14876532240.png");
-        NianImageDownload.downloadThumbs("step", "31305_14876533413.png");
-        NianImageDownload.downloadThumbs("step", "31305_14875690360.png");
-        NianImageDownload.downloadThumbs("step", "31305_14844618070.png");
-        NianImageDownload.downloadThumbs("step", "31305_14863644773.png");
-        NianImageDownload.downloadThumbs("step", "31305_14857474924.png");
-        NianImageDownload.downloadThumbs("step", "31305_14876533794.png");
-        NianImageDownload.downloadThumbs("step", "31305_14802208790.png");
-        NianImageDownload.downloadThumbs("step", "31305_14784387420.png");
-        NianImageDownload.downloadThumbs("step", "31305_14758939460.png");
-        NianImageDownload.downloadThumbs("step", "31305_14619245172.png");
-        NianImageDownload.downloadThumbs("step", "31305_15199244034.png");
-        NianImageDownload.downloadThumbs("step", "31305_15170268590.png");
-        NianImageDownload.downloadThumbs("step", "31305_15199244045.png");
-        NianImageDownload.downloadThumbs("step", "31305_15139348783.png");
-        NianImageDownload.downloadThumbs("step", "31305_15133928650.png");
-        NianImageDownload.downloadThumbs("step", "31305_15139348794.png");
-        NianImageDownload.downloadThumbs("step", "31305_15100145512.png");
-        NianImageDownload.downloadThumbs("step", "31305_15050941611.png");
-        NianImageDownload.downloadImage("step", "31305_14876532240.png");
-        NianImageDownload.downloadImage("step", "31305_14876533413.png");
-        NianImageDownload.downloadImage("step", "31305_14875690360.png");
-        NianImageDownload.downloadImage("step", "31305_14844618070.png");
-        NianImageDownload.downloadImage("step", "31305_14863644773.png");
-        NianImageDownload.downloadImage("step", "31305_14857474924.png");
-        NianImageDownload.downloadImage("step", "31305_14876533794.png");
-        NianImageDownload.downloadImage("step", "31305_14802208790.png");
-        NianImageDownload.downloadImage("step", "31305_14784387420.png");
-        NianImageDownload.downloadImage("step", "31305_14758939460.png");
-        NianImageDownload.downloadImage("step", "31305_14619245172.png");
-        NianImageDownload.downloadImage("step", "31305_15199244034.png");
-        NianImageDownload.downloadImage("step", "31305_15170268590.png");
-        NianImageDownload.downloadImage("step", "31305_15199244045.png");
-        NianImageDownload.downloadImage("step", "31305_15139348783.png");
-        NianImageDownload.downloadImage("step", "31305_15133928650.png");
-        NianImageDownload.downloadImage("step", "31305_15139348794.png");
-        NianImageDownload.downloadImage("step", "31305_15100145512.png");
-        NianImageDownload.downloadImage("step", "31305_15050941611.png");
         //NianImageDownload.download("step", "278605_15076488150.png");
         //NianImageDownload.download("dream", "142171_1478446282.png");
+        //NianImageDownload.download("head", "142171.jpg");
+        String imageString = "82273_15172060570.png,82273_15067897750.png,82273_15065324930.png,82273_15072019731.png,82273_15095536130.png,82273_15079460111.png,82273_15083330192.png,82273_15075125440.png,82273_15067311020.png,82273_15064925210.png,82273_15064925242.png,82273_15064925231.png,82273_15033309431.png,82273_15065324961.png,82273_14958515472.png,82273_15065324972.png,82273_14914473940.png,82273_14834409440.png,82273_14669522844.png,82273_14635869050.png,82273_14619177941.png,82273_14591726161.png,82273_15044097420.png,82273_14984011340.png,82273_14860216530.png,82273_14881035370.png,82273_14870936730.png,82273_14849283604.png,82273_14756494821.png,82273_14729181241.png,82273_14756494823.png,82273_14703361802.png,82273_14669308491.png,82273_14596080130.png,82273_14583726810.png,82273_15100244640.png,82273_15059829860.png";
+        String[] images = imageString.split(",");
+        for (String image : images) {
+            NianImageDownload.download("step", image);
+        }
+        NianImageDownload.closewait();
         NianBackupStartup.shutdown();
     }
 
