@@ -27,9 +27,9 @@ public class NianImageDownload {
     static {
 
         requestConfig = RequestConfig.custom()
-                .setConnectTimeout(100000)
-                //.setConnectionRequestTimeout(Config.getInt("httpclient.request.timeout"))
-                //.setSocketTimeout(Config.getInt("httpclient.socket.timeout"))
+                .setConnectTimeout(60000)
+                .setConnectionRequestTimeout(300000)
+                .setSocketTimeout(600000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
         //threadPool = Executors.newFixedThreadPool(50);

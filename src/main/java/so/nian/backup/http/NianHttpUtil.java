@@ -61,8 +61,8 @@ public class NianHttpUtil {
         PROC.put("image", "image?${image}");
 
         requestConfig = RequestConfig.custom()
-                .setConnectTimeout(100000)
-                //.setConnectionRequestTimeout(Config.getInt("httpclient.request.timeout"))
+                .setConnectTimeout(60000)
+                .setConnectionRequestTimeout(300000)
                 //.setSocketTimeout(Config.getInt("httpclient.socket.timeout"))
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();

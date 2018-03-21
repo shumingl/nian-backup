@@ -153,36 +153,4 @@
     </#if>
 </div>
 </body>
-<script type="text/javascript" src="jquery-3.3.1.min.js"></script>
-<script type="text/javascript">
-    $(".image_tooltip img").mouseover(function(e){
-        var MAXWIDTH = 600
-        var rectinfo = $(this).attr('rectinfo')
-        var rects = rectinfo.split("x")
-        var width = rects[0]
-        var height = rects[1]
-        if (width > MAXWIDTH) {
-            height = height * MAXWIDTH / width
-            width = MAXWIDTH
-        }
-        var $tooltip = "<div id='image_tooltip'><img src='"+this.src+"'></div>";
-        $("body").append($tooltip); //添加到页面中
-        $("#image_tooltip").css(
-                {
-                    "top": e.pageY + "px",
-                    "left": e.pageX + "px",
-                    "width": width + "px",
-                    "height": height + "px",
-                    "position": "absolute"
-                }).show("fast");    //设置x坐标和y坐标，并显示
-    }).mouseout(function(){
-        $("#image_tooltip").remove(); //将该div移除
-    }).mousemove(function(e){
-        $("#image_tooltip").css(
-                {
-                    "top": e.pageY + "px",
-                    "left": e.pageX + "px"
-                });
-    });
-</script>
 </html>
