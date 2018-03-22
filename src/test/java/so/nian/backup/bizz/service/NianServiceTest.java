@@ -14,8 +14,8 @@ public class NianServiceTest {
     public void findDreams() throws Exception {
         NianBackupStartup.startup();
         NianService service = new NianService();
-        service.findDreams("142171");//罗生
-        //service.findDreams("103570");//浅纹
+        //service.findDreams("142171");//罗生
+        service.findDreams("103570");//浅纹
         //service.findDreams("111987");//步摇
         //service.findDreams("278605");//沉疴
         //service.findDreams("19911");//复旦姑娘
