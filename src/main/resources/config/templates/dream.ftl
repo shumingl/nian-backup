@@ -1,6 +1,7 @@
 <#assign fcomments="so.nian.backup.freemarker.function.NianStepComments"?new()/>
 <#assign fdate="so.nian.backup.freemarker.function.NianDateFromat"?new()/>
 <#assign fimage="so.nian.backup.freemarker.function.NianStepImages"?new()/>
+<#assign fhtml="so.nian.backup.freemarker.function.NianDealContent"?new()/>
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,7 +45,7 @@
             font-family: Consolas, '宋体';
             font-size: 12pt;
             margin-left: 30px;
-            white-space: pre;
+            white-space: pre-wrap;
         }
         .grid_wrapper {
             width: 1000px;

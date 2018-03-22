@@ -12,9 +12,6 @@ import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.StringUtil;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.*;
 
 public class NianImageDownload {
@@ -32,17 +29,7 @@ public class NianImageDownload {
                 .setSocketTimeout(1800000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-        //threadPool = Executors.newFixedThreadPool(50);
         threadPool = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-    }
-
-    public static void download(String type, String image) {
-        String path = AppConfig.getNianImageBase();
-        String imagepath = StringUtil.generatePath(path, type, image);
-        File imagefile = new File(imagepath);
-        if (!imagefile.exists() || imagefile.length() == 0) {
-            threadPool.execute(new NianImageDownloadWorker(type, image));
-        }
     }
 
     public static void closewait() {
@@ -51,7 +38,28 @@ public class NianImageDownload {
         }
     }
 
+    public static void download(String type, String image) {
+        download(type, image, false);
+    }
+
+    public static HttpResultEntity downloadThumbs(String type, String image) {
+        return downloadThumbs(type, image, false);
+    }
+
     public static HttpResultEntity downloadImage(String type, String image) {
+        return downloadImage(type, image, false);
+    }
+
+    public static void download(String type, String image, boolean iscover) {
+        String path = AppConfig.getNianImageBase();
+        String imagepath = StringUtil.generatePath(path, type, image);
+        File imagefile = new File(imagepath);
+        if (iscover || !imagefile.exists() || imagefile.length() == 0) {
+            threadPool.execute(new NianImageDownloadWorker(type, image, iscover));
+        }
+    }
+
+    public static HttpResultEntity downloadImage(String type, String image, boolean iscover) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
             String path = AppConfig.getNianImageBase();
@@ -59,7 +67,7 @@ public class NianImageDownload {
             File imagefile = new File(imagepath);
 
             // 文件不存在则下载图片
-            if (!imagefile.exists() || imagefile.length() == 0) {
+            if (iscover || !imagefile.exists() || imagefile.length() == 0) {
                 // head/step/dream/cover
                 String url = String.format("http://img.nian.so/%s/%s", type, image);
                 // 检查METHOD
@@ -80,7 +88,7 @@ public class NianImageDownload {
         }
     }
 
-    public static HttpResultEntity downloadThumbs(String type, String image) {
+    public static HttpResultEntity downloadThumbs(String type, String image, boolean iscover) {
         CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
             String path = AppConfig.getNianImageBase();
@@ -88,7 +96,7 @@ public class NianImageDownload {
             File imagefile = new File(imagepath);
 
             // 文件不存在则下载图片
-            if (!imagefile.exists() || imagefile.length() == 0) {
+            if (iscover || !imagefile.exists() || imagefile.length() == 0) {
                 // head/step/dream/cover
                 String suffix = "";
                 if ("head".equals(type)) suffix = "dream";
@@ -120,20 +128,22 @@ public class NianImageDownload {
 class NianImageDownloadWorker extends Thread {
     private String type;
     private String image;
+    private boolean iscover;
 
     private static Logger logger = LoggerFactory.getLogger(NianImageDownloadWorker.class);
 
-    public NianImageDownloadWorker(String type, String image) {
+    public NianImageDownloadWorker(String type, String image, boolean iscover) {
         this.type = type;
         this.image = image;
+        this.iscover = iscover;
     }
 
     @Override
     public void run() {
         try {
-            HttpResultEntity thumbsEntity = NianImageDownload.downloadThumbs(type, image);
+            HttpResultEntity thumbsEntity = NianImageDownload.downloadThumbs(type, image, iscover);
             if (thumbsEntity.isSuccess()) {
-                HttpResultEntity imageEntity = NianImageDownload.downloadImage(type, image);
+                HttpResultEntity imageEntity = NianImageDownload.downloadImage(type, image, iscover);
                 if (imageEntity.isSuccess()) {
                     logger.info(String.format("SUCC: image=[%s/%s]", type, image));
                 } else {

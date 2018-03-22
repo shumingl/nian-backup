@@ -86,8 +86,8 @@ public class HttpResultEntity {
     }
 
     public void setResponseBody(String responseBody) {
-        this.responseBody = responseBody;
-        responseMap = JsonUtil.json2Map(responseBody);
+        this.responseBody = responseBody.replace("&amp;nbsp;", " ").replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">");
+        responseMap = JsonUtil.json2Map(this.responseBody);
     }
 
     public Map<String, Object> getResponseMap() {
