@@ -6,9 +6,11 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.utils.ExpressionParser;
@@ -28,6 +30,7 @@ public class NianHttpUtil {
     public static final Map<String, String> PROC = new HashMap<>();
     private static final ExpressionParser parser = ExpressionParser.getDefault();
     private static RequestConfig requestConfig = null;
+    private static PoolingHttpClientConnectionManager apiConnectionManager = null;
 
     static {
 
@@ -37,6 +40,7 @@ public class NianHttpUtil {
         HEADERS.put("Accept", "*/*");
         HEADERS.put("Accept-Language", "zh-Hans-CN;q=1, zh-Hant-CN;q=0.9");
         HEADERS.put("Cookie", String.format("flash=%s0; __utma=6360749.1361854274.1491830767.1491830767.1491830767.1", System.currentTimeMillis()));
+        //HEADERS.put("Connection", "close");
 
         URLS.put("login", "http://api.nian.so/user/login");
         URLS.put("info", "http://api.nian.so/user/${euid}?uid=${uid}&shell=${shell}");
@@ -65,6 +69,32 @@ public class NianHttpUtil {
                 .setConnectionRequestTimeout(300000)
                 //.setSocketTimeout(Config.getInt("httpclient.socket.timeout"))
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
+                .build();
+
+        /*
+        ConnectionSocketFactory plainSocketFactory = PlainConnectionSocketFactory.getSocketFactory();
+        SSLContext sslContext = new SSLContextBuilder()
+                .loadTrustMaterial(null, new NianSSLTrustStrategy())
+                .build();
+        SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(sslContext);
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("http", plainSocketFactory)
+                .register("https", sslSocketFactory)
+                .build();
+        */
+        apiConnectionManager = new PoolingHttpClientConnectionManager();
+        // Increase max total connection
+        apiConnectionManager.setMaxTotal(400);
+        // Increase default max connection per route
+        apiConnectionManager.setDefaultMaxPerRoute(20);
+        // Increase max connections for api.nian.so:80 to 50
+        HttpHost localhost = new HttpHost("api.nian.so", 80);
+        apiConnectionManager.setMaxPerRoute(new HttpRoute(localhost), 50);
+    }
+
+    private static CloseableHttpClient geApitHttpClient() {
+        return HttpClients.custom()
+                .setConnectionManager(apiConnectionManager)
                 .build();
     }
 
@@ -229,7 +259,7 @@ public class NianHttpUtil {
     }
 
     public static HttpResultEntity exec(String method, String url, String body, Map<String, String> headers) {
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = geApitHttpClient();
         try {
             // 检查METHOD
             HttpUriRequest request = null;
@@ -262,7 +292,7 @@ public class NianHttpUtil {
             throw new RuntimeException(e);
             // return new HttpResultEntity(false, e.getMessage());
         } finally {
-            NianHttpUtil.closeQuitely(httpClient);
+            //NianHttpUtil.closeQuitely(httpClient);
         }
     }
 

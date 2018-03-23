@@ -1,21 +1,44 @@
 package so.nian.backup.bizz.service;
 
 import org.junit.Test;
+import so.nian.backup.http.HttpResultEntity;
 import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.http.NianImageDownload;
 import so.nian.backup.startup.NianBackupStartup;
 
+import java.util.Map;
+
 public class NianServiceTest {
     @Test
     public void dealInfo() throws Exception {
+        NianHttpUtil.LOGINFO.put("uid", "142171");
+        NianHttpUtil.LOGINFO.put("name", "罗生_");
+        NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
+        int begin = 1077392;
+        for (int i = begin; i < begin + 1000; i++) {
+            HttpResultEntity info = NianHttpUtil.info(String.valueOf(i));
+            if (info.isSuccess()) {
+                Map<String, Object> data = (Map<String, Object>) info.getResponseMap().get("data");
+                if (data != null) {
+                    Map<String, Object> user = (Map<String, Object>) data.get("user");
+                    if (user != null) {
+                        Object uid = user.get("uid");
+                        //if (uid != null)
+                    }
+                }
+            } else {
+                System.out.printf("[%d][%03d][%s]\n", System.currentTimeMillis(), i - begin, info.getMessage());
+            }
+            System.out.printf("[%d][%03d][%s]\n", System.currentTimeMillis(), i - begin, info.getResponseBody());
+        }
     }
 
     @Test
     public void findDreams() throws Exception {
         NianBackupStartup.startup();
         NianService service = new NianService();
-        //service.findDreams("142171");//罗生
-        service.findDreams("103570");//浅纹
+        service.findDreams("142171");//罗生
+        //service.findDreams("103570");//浅纹
         //service.findDreams("111987");//步摇
         //service.findDreams("278605");//沉疴
         //service.findDreams("19911");//复旦姑娘

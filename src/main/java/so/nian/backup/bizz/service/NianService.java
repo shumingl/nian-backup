@@ -22,8 +22,8 @@ public class NianService {
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
         HttpResultEntity info = NianHttpUtil.info(userid);
-        HttpResultEntity care = NianHttpUtil.care(userid, 1);
-        HttpResultEntity fans = NianHttpUtil.fans(userid, 1);
+        //HttpResultEntity care = NianHttpUtil.care(userid, 1);
+        //HttpResultEntity fans = NianHttpUtil.fans(userid, 1);
     }
 
     public void findDreams(String userid) {
