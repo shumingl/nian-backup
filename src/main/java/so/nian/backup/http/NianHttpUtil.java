@@ -1,22 +1,33 @@
 package so.nian.backup.http;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.utils.ExpressionParser;
 import so.nian.backup.utils.StringUtil;
 
+import javax.net.ssl.SSLException;
 import java.io.Closeable;
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +41,49 @@ public class NianHttpUtil {
     public static final Map<String, String> PROC = new HashMap<>();
     private static final ExpressionParser parser = ExpressionParser.getDefault();
     private static RequestConfig requestConfig = null;
-    private static PoolingHttpClientConnectionManager apiConnectionManager = null;
+    private static PoolingHttpClientConnectionManager apiConnectionManager;
+    //自定义重试策略
+    private static HttpRequestRetryHandler apiRetryHandler = new HttpRequestRetryHandler() {
+
+        public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+            //Do not retry if over max retry count
+            if (executionCount >= 5) {
+                return false;
+            }
+            //Timeout
+            if (exception instanceof InterruptedIOException) {
+                return false;
+            }
+            //Unknown host
+            if (exception instanceof UnknownHostException) {
+                return false;
+            }
+            //Connection refused
+            if (exception instanceof ConnectTimeoutException) {
+                return false;
+            }
+            //SSL handshake exception
+            if (exception instanceof SSLException) {
+                return false;
+            }
+
+            HttpClientContext clientContext = HttpClientContext.adapt(context);
+            HttpRequest request = clientContext.getRequest();
+            boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+            //Retry if the request is considered idempotent
+            //如果请求类型不是HttpEntityEnclosingRequest，被认为是幂等的，那么就重试
+            //HttpEntityEnclosingRequest指的是有请求体的request，比HttpRequest多一个Entity属性
+            //而常用的GET请求是没有请求体的，POST、PUT都是有请求体的
+            //Rest一般用GET请求获取数据，故幂等，POST用于新增数据，故不幂等
+            if (idempotent) {
+                return true;
+            }
+
+            return false;
+        }
+    };
+
+    private static CloseableHttpClient httpClient;
 
     static {
 
@@ -88,14 +141,17 @@ public class NianHttpUtil {
         // Increase default max connection per route
         apiConnectionManager.setDefaultMaxPerRoute(20);
         // Increase max connections for api.nian.so:80 to 50
-        HttpHost localhost = new HttpHost("api.nian.so", 80);
-        apiConnectionManager.setMaxPerRoute(new HttpRoute(localhost), 50);
+        HttpHost apihost = new HttpHost("api.nian.so", 80);
+        apiConnectionManager.setMaxPerRoute(new HttpRoute(apihost), 50);
+        httpClient = HttpClients.custom()
+                .setConnectionManager(apiConnectionManager)
+                .setRetryHandler(apiRetryHandler)
+                .build();
+
     }
 
     private static CloseableHttpClient geApitHttpClient() {
-        return HttpClients.custom()
-                .setConnectionManager(apiConnectionManager)
-                .build();
+        return httpClient;
     }
 
     private static void FillHttpHeaders(HttpUriRequest request) {

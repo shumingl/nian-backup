@@ -206,7 +206,7 @@
         <div class="nian_headinfo"><#assign ret=fimage('head', dream.uid + '.jpg')/>
             <span class="nian_stepheadimage"><a href="images/head/${dream.uid}.jpg"><img src="images/thumbs/${dream.uid}.jpg"/></a></span>
             <span class="nian_stepheadnick">${step.user}</span>
-            <p class="nian_stepinfo">评论(${step.comments}), 赞(${step.comments}), ${fdate(step.lastdate)}</p>
+            <p class="nian_stepinfo">评论(${step.comments}), 赞(${step.likes}), ${fdate(step.lastdate)}</p>
         </div>
         <#if step.images?size gt 0>
         <ul class="picture-grid image_tooltip">
