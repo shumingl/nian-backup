@@ -86,8 +86,16 @@ public class HttpResultEntity {
     }
 
     public void setResponseBody(String responseBody) {
-        this.responseBody = responseBody.replace("&amp;nbsp;", " ").replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">");
-        responseMap = JsonUtil.json2Map(this.responseBody);
+        this.responseBody = responseBody;
+        if (responseBody != null) {
+            this.responseBody = responseBody
+                    .replace("&amp;", "&")
+                    .replace("&quot;", "\\\"")
+                    .replace("&nbsp;", " ")
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">");
+            responseMap = JsonUtil.json2Map(this.responseBody);
+        }
     }
 
     public Map<String, Object> getResponseMap() {

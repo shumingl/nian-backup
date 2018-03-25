@@ -31,15 +31,15 @@ public class NianHtmlServiceTest {
     @Test
     public void downloadByElseUsers() throws Exception {
         NianBackupStartup.startup();
-        NianHttpUtil.LOGINFO.put("uid", "102220");
-        NianHttpUtil.LOGINFO.put("name", "行致");
-        NianHttpUtil.LOGINFO.put("shell", "41477424d85ca604d15b6eb72d635206");
-        NianHtmlService.downloadForUsers("102220");
-        /*
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
         NianHtmlService.downloadForUsers("142171");
+        /*
+        NianHttpUtil.LOGINFO.put("uid", "102220");
+        NianHttpUtil.LOGINFO.put("name", "行致");
+        NianHttpUtil.LOGINFO.put("shell", "41477424d85ca604d15b6eb72d635206");
+        NianHtmlService.downloadForUsers("102220");
         */
         NianBackupStartup.shutdown();
     }
@@ -50,7 +50,8 @@ public class NianHtmlServiceTest {
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
-        NianHtmlService.downloadForUsers(
+        NianHtmlService.downloadForUsers("189148");//丧丧的小包子
+        /*NianHtmlService.downloadForUsers(
                 "103570",//浅纹
                 "111987",//步摇
                 "278605",//沉疴
@@ -76,9 +77,8 @@ public class NianHtmlServiceTest {
                 "84974",//Tyche_
                 "350439",//柠檬味的十六
                 "146392",//昕不昕
-                "645531"//无畏
-        );
-        /*NianHtmlService.downloadForUsers(
+                "645531",//无畏
+                /// *NianHtmlService.downloadForUsers(
                 "19911",//复旦姑娘
                 "111984",//朱迪朱迪
                 "15424",//五月五日羽
@@ -92,7 +92,8 @@ public class NianHtmlServiceTest {
                 "312870",//陈阿苗
                 "82273",//球球糖本球
                 "31305"//董东栋
-        );*/
+        );
+        / /*/
         NianBackupStartup.shutdown();
     }
 
@@ -102,25 +103,17 @@ public class NianHtmlServiceTest {
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
-        //NianService.downloadDream(null, "9062");//多读书读好书
-        //NianService.downloadDream(null, "49681");//不为人知的日常
-        //NianService.downloadDream(null, "638060");//患者病例
-        //NianService.downloadDream(null, "4057882");
-        //NianService.downloadDream(null, "2898257");
-        //NianService.downloadDream(null, "2976037");
-        //NianService.downloadDream(null, "3141136");
-        //NianService.downloadDream(null, "3602627");
-        //NianService.downloadDream(null, "3750773");
-        //NianService.downloadDream(null, "3790489");
-        //NianService.downloadDream(null, "3801522");
-        //NianService.downloadDream(null, "3875526");
-        //NianService.downloadDream(null, "218952");//劣子博物馆
-        //NianService.downloadDream(null, "313533");//就算一个人早餐也要好好吃
-        //NianService.downloadDream(null, "179886");//Physical Borderline
-        //NianService.downloadDream(null, "1578986");//安利给你好用的冷门APP
-        //NianService.downloadDream(null, "70279");//光景
-        //NianService.downloadDream(null, "2678095");//地獄之犬
-        //NianService.downloadDream(null, "4003655");//時至沙境
+        NianHtmlService.downloadDream(null, "9062");//多读书读好书
+        NianHtmlService.downloadDream(null, "49681");//不为人知的日常
+        //NianHtmlService.downloadDream(null, "638060");//患者病例
+        //NianHtmlService.downloadDream(null, "218952");//劣子博物馆
+        //NianHtmlService.downloadDream(null, "313533");//就算一个人早餐也要好好吃
+        //NianHtmlService.downloadDream(null, "179886");//Physical Borderline
+        //NianHtmlService.downloadDream(null, "1578986");//安利给你好用的冷门APP
+        //NianHtmlService.downloadDream(null, "70279");//光景
+        //NianHtmlService.downloadDream(null, "2678095");//地獄之犬
+        //NianHtmlService.downloadDream(null, "4003655");//時至沙境
+        NianJsonService.shutdownPool();
         NianHtmlService.shutdownPool();
         NianImageDownload.shutdownPool();
         NianBackupStartup.shutdown();
