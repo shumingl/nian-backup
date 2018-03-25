@@ -23,6 +23,7 @@ public class AppConfig {
     private static final String logbackFilePath = "logback.logbasepath";
     private static final String nianViewsBase = "nian.views.base";
     private static final String nianImageBase = "nian.image.base";
+    private static final String nianCacheBase = "nian.cache.base";
     private static final String freemarkerTemplatePath = "freemarker.template.path";
     private static final String freemarkerTemplateEncode = "freemarker.template.encode";
     private static final String applicationFontPath = "application.fontpath";
@@ -42,8 +43,9 @@ public class AppConfig {
 
             configMap.put(logbackConfig, "LogBack配置文件路径");
             configMap.put(logbackFilePath, "LogBack日志存放路径");
-            configMap.put(nianViewsBase, "念视图根路径");
-            configMap.put(nianImageBase, "念图片根路径");
+            configMap.put(nianViewsBase, "念的视图根路径");
+            configMap.put(nianImageBase, "念的图片根路径");
+            configMap.put(nianCacheBase, "念数据缓存路径");
 
             configMap.put(freemarkerTemplatePath, "FreeMarker模板路径");
             configMap.put(freemarkerTemplateEncode, "FreeMarker模板编码");
@@ -129,6 +131,10 @@ public class AppConfig {
 
     public static String getNianViewsBase() {
         return config.get(nianViewsBase);
+    }
+
+    public static String getNianCacheBase() {
+        return config.get(nianCacheBase);
     }
 
     public static String getNianImageBase() {

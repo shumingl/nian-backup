@@ -147,53 +147,13 @@
         .picture-grid li a:hover, img:hover {
             z-index: 2;
         }
-        .layout_left {
-            position: fixed;
-            background-color: #727272;
-            width: 0;
-        }
-        .layout_right {
-            margin-left: 0;
-        }
-        .button-content-arrow{
-            width:20px;
-            height: 0%;
-            background: white;
-            border: 15px solid;
-            border-color: #727272 #727272 #727272 #B2DE34 ;
-            position: absolute;
-            left: 120px;
-            top: 10px;
-        }
-        .button-content{
-            width: 100px;
-            height: 30px;
-            background-color: #B2DE34;
-            font-size: small;
-            line-height: 30px;
-            text-align: center;
-            position: absolute;
-            top: 10px;
-            left: 20px;
-        }
-        .button-content-bottom {
-            width: 10px;
-            height: 0%;
-            background: white;
-            border: 15px solid;
-            border-color: #fff #58661C #fff #fff;
-            border-top: 0;
-            left: -5px;
-            position: absolute;
-            top: 40px;
-        }
     </style>
 </head>
 
 <body>
 <div class="grid_wrapper">
     <div class="nian_headblock">
-        <div class="nian_topheadinfo"><#assign ret=fimage('dream', dream.image)/>
+        <div class="nian_topheadinfo"><#assign ret=fimage(dream.uid, 'dream', dream.image)/>
             <span class="nian_topbooktitle"><a href="images/dream/${dream.image}"><img src="images/thumbs/${dream.image}"/></a></span>
             <span class="nian_topbookname">${dream.title}</span>
             <p class="nian_dreaminfo">${dream.user}, 进展(${dream.step}), 赞(${dream.like_step}), 听众(${dream.followers}) ${fdate(dream.lastdate)}</p>
@@ -203,7 +163,7 @@
     <#if steps?size gt 0>
     <#list steps as step>
     <div class="nian_textblock">
-        <div class="nian_headinfo"><#assign ret=fimage('head', dream.uid + '.jpg')/>
+        <div class="nian_headinfo"><#assign ret=fimage(dream.uid, 'head', dream.uid + '.jpg')/>
             <span class="nian_stepheadimage"><a href="images/head/${dream.uid}.jpg"><img src="images/thumbs/${dream.uid}.jpg"/></a></span>
             <span class="nian_stepheadnick">${step.user}</span>
             <p class="nian_stepinfo">评论(${step.comments}), 赞(${step.likes}), ${fdate(step.lastdate)}</p>
@@ -211,10 +171,17 @@
         <#if step.images?size gt 0>
         <ul class="picture-grid image_tooltip">
             <#list step.images as image>
-            <#assign ret=fimage('step', image.path)/>
+            <#assign ret=fimage(dream.uid, 'step', image.path)/>
             <li><a href="images/step/${image.path}"><img src="images/thumbs/${image.path}" /></a></li>
             </#list>
         </ul>
+        <#elseif step.image??>
+        <#if step.image?length gt 1>
+        <ul class="picture-grid image_tooltip">
+            <#assign ret=fimage(dream.uid, 'step', step.image)/>
+            <li><a href="images/step/${step.image}"><img src="images/thumbs/${step.image}" /></a></li>
+        </ul>
+        </#if>
         </#if>
         <p class="nian_stepcontent">${step.content}</p>
         <!--这里需要读取评论-->
@@ -229,7 +196,7 @@
         </#if>
         <!--这里需要读取点赞的人-->
     </div>
-    <#if step?index % 20 == 0><#flush /></#if>
+    <#if step?index % 100 == 0><#flush /></#if>
     </#list>
     </#if>
 </div>

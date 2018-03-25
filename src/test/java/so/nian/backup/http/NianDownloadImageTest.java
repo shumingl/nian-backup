@@ -7,20 +7,20 @@ public class NianDownloadImageTest {
     @Test
     public void downloadImage() throws Exception {
         NianBackupStartup.startup();
-        NianImageDownload.downloadImage("cover", "142171_1484715118.jpg");
-        NianImageDownload.downloadImage("step", "9526_15213553510.png");
-        NianImageDownload.downloadImage("head", "142171.jpg");
-        NianImageDownload.downloadImage("dream", "142171_1478446282.png");
+        NianImageDownload.downloadImage("imgtest", "cover", "142171_1484715118.jpg");
+        NianImageDownload.downloadImage("imgtest", "step", "9526_15213553510.png");
+        NianImageDownload.downloadImage("imgtest", "head", "142171.jpg");
+        NianImageDownload.downloadImage("imgtest", "dream", "142171_1478446282.png");
         NianBackupStartup.shutdown();
     }
 
     @Test
     public void downloadThumbs() throws Exception {
         NianBackupStartup.startup();
-        NianImageDownload.downloadThumbs("cover", "142171_1484715118.jpg");
-        NianImageDownload.downloadThumbs("step", "9526_15213553510.png");
-        NianImageDownload.downloadThumbs("head", "142171.jpg");
-        NianImageDownload.downloadThumbs("dream", "142171_1478446282.png");
+        NianImageDownload.downloadThumbs("imgtest", "cover", "142171_1484715118.jpg");
+        NianImageDownload.downloadThumbs("imgtest", "step", "9526_15213553510.png");
+        NianImageDownload.downloadThumbs("imgtest", "head", "142171.jpg");
+        NianImageDownload.downloadThumbs("imgtest", "dream", "142171_1478446282.png");
         NianBackupStartup.shutdown();
     }
 
@@ -34,9 +34,9 @@ public class NianDownloadImageTest {
         String imageString = "103570_14675493652.png";
         String[] images = imageString.split("\\|");
         for (String image : images) {
-            NianImageDownload.download("step", image, true);
+            NianImageDownload.download("download", "step", image, true);
         }
-        NianImageDownload.closewait();
+        NianImageDownload.shutdownPool();
         NianBackupStartup.shutdown();
     }
 

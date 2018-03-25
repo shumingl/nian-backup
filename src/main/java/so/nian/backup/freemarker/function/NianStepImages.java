@@ -11,13 +11,15 @@ public class NianStepImages implements TemplateMethodModelEx {
     @Override
     public Object exec(List arguments) throws TemplateModelException {
 
-        SimpleScalar pType = (SimpleScalar) arguments.get(0);
-        SimpleScalar pImage = (SimpleScalar) arguments.get(1);
-        if (pType == null || pImage == null)
-            return 0;
+        SimpleScalar pUserid = (SimpleScalar) arguments.get(0);
+        SimpleScalar pType = (SimpleScalar) arguments.get(1);
+        SimpleScalar pImage = (SimpleScalar) arguments.get(2);
+        if (pUserid == null || pType == null || pImage == null)
+            return "";
+        String userid = pUserid.getAsString();
         String type = pType.getAsString();
         String image = pImage.getAsString();
-        NianImageDownload.download(type, image);
-        return 1;
+        NianImageDownload.download(userid, type, image);
+        return "";
     }
 }

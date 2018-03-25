@@ -14,7 +14,8 @@ public class NianHttpUtilTest {
 
     @Test
     public void login() throws Exception {
-        HttpResultEntity result = NianHttpUtil.login("1373521108@qq.com", "leaves89@163");
+        //HttpResultEntity result = NianHttpUtil.login("1373521108@qq.com", "leaves89@163");
+        HttpResultEntity result = NianHttpUtil.login("1192858440@qq.com", "102385753");
         if (result.isSuccess()) {
             Map<String, Object> loginfo = result.getResponseMap();
             logger.info(String.format("登录成功：%s", loginfo.get("data")));
