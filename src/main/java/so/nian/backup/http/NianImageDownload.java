@@ -29,10 +29,10 @@ public class NianImageDownload {
     private static Logger logger = LoggerFactory.getLogger(NianImageDownload.class);
 
     private static RequestConfig requestConfig = null;
-    private static ThreadPoolExecutor threadPool = null;
+    private static ThreadPoolExecutor imageThreadPool = null;
     private static List<Map<String, String>> imagesCache = new ArrayList<>();
     private static Map<String, Integer> failedImages;
-    private static int MAX_RETRY = 10;
+    private static final int MAX_RETRY = 10;
     private static CloseableHttpClient httpClient;
 
     static {
@@ -43,7 +43,7 @@ public class NianImageDownload {
                 .setSocketTimeout(1800000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-        threadPool = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS,
+        imageThreadPool = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new NamedThreadFactory("IMGS"));
         httpClient = HttpClients.createDefault();
         failedImages = new ConcurrentHashMap<>();
@@ -99,17 +99,17 @@ public class NianImageDownload {
     public static void shutdownPool() {
         long finished = 0;
         boolean shutdown = false;
-        while (!threadPool.isTerminated()) {
-            if (shutdown && finished != threadPool.getCompletedTaskCount()) {
+        while (!imageThreadPool.isTerminated()) {
+            if (shutdown && finished != imageThreadPool.getCompletedTaskCount()) {
                 logger.info(String.format("IMAGE-ThreadPool: RUNNING(%d), STATUS(%d/%d), QUEUE(%d).",
-                        threadPool.getActiveCount(),
-                        threadPool.getCompletedTaskCount(),
-                        threadPool.getTaskCount(),
-                        threadPool.getQueue().size()));
-                finished = threadPool.getCompletedTaskCount();
+                        imageThreadPool.getActiveCount(),
+                        imageThreadPool.getCompletedTaskCount(),
+                        imageThreadPool.getTaskCount(),
+                        imageThreadPool.getQueue().size()));
+                finished = imageThreadPool.getCompletedTaskCount();
             }
-            if (!shutdown && threadPool.getActiveCount() == 0 && threadPool.getQueue().size() == 0) {
-                threadPool.shutdown();
+            if (!shutdown && imageThreadPool.getActiveCount() == 0 && imageThreadPool.getQueue().size() == 0) {
+                imageThreadPool.shutdown();
                 shutdown = true;
             }
             try {
@@ -175,8 +175,8 @@ public class NianImageDownload {
         return downloadImage(userid, type, image, false);
     }
 
-    public static ThreadPoolExecutor getThreadPool() {
-        return threadPool;
+    public static ThreadPoolExecutor getImageThreadPool() {
+        return imageThreadPool;
     }
 
     public static void download(String userid, String type, String image, boolean iscover) {
@@ -185,12 +185,15 @@ public class NianImageDownload {
         String imagepath = StringUtil.generatePath(backupbase, userid, "images", type, image);
         File imagefile = new File(imagepath);
         if (iscover || !imagefile.exists() || imagefile.length() == 0) {
-            threadPool.execute(new NianImageDownloadWorker(userid, type, image, iscover));
+            imageThreadPool.execute(new NianImageDownloadWorker(userid, type, image, iscover));
         }
     }
 
     public static HttpResultEntity downloadImage(String userid, String type, String image, boolean iscover) {
         try {
+            if (StringUtil.isNullOrEmpty(image)) {
+                return new HttpResultEntity(true, "IMAGE参数为空，跳过下载。");
+            }
             String backupbase = AppConfig.getNianViewsBase();
             String imagepath = StringUtil.generatePath(backupbase, userid, "images", type, image);
             File imagefile = new File(imagepath);
@@ -216,7 +219,7 @@ public class NianImageDownload {
             return new HttpResultEntity(true, "图片下载成功：" + imagepath);
 
         } catch (Exception e) {
-            logger.error(String.format("图片下载异常[%s/%s/%s]：%s", userid, type, image, e.getMessage()));
+            logger.error(String.format("图片下载异常[%s/images/%s/%s]：%s", userid, type, image, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
             //NianHttpUtil.closeQuitely(httpClient);
@@ -225,6 +228,10 @@ public class NianImageDownload {
 
     public static HttpResultEntity downloadThumbs(String userid, String type, String image, boolean iscover) {
         try {
+
+            if (StringUtil.isNullOrEmpty(image)) {
+                return new HttpResultEntity(true, "IMAGE参数为空，跳过下载。");
+            }
             String backupbase = AppConfig.getNianViewsBase();
             String imagepath = StringUtil.generatePath(backupbase, userid, "images/thumbs", image);
             File imagefile = new File(imagepath);
@@ -256,7 +263,8 @@ public class NianImageDownload {
             return new HttpResultEntity(true, "图片下载成功：" + imagepath);
 
         } catch (Exception e) {
-            logger.error(String.format("图片下载异常[thumbs:%s/%s]：[%s]%s", type, image, e.getClass().getCanonicalName(), e.getMessage()));
+            logger.error(String.format("图片下载异常[%s/thumbs/%s/%s]：[%s]%s",
+                    userid, type, image, e.getClass().getCanonicalName(), e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
             //NianHttpUtil.closeQuitely(httpClient);
@@ -307,7 +315,7 @@ class NianImageDownloadWorker extends Thread {
                 logger.info(String.format("REDO: image=[%s/%s/%s]", userid, type, image));
                 NianImageDownload.download(userid, type, image, true);
             } else {
-                logger.info(String.format("SKIP: image=[%s/%s/%s][图片尝试下载次数已超过最大值]", userid, type, image));
+                logger.info(String.format("SKIP: image=[%s/%s/%s][图片下载尝试次数已超过最大值]", userid, type, image));
             }
         }
     }

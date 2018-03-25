@@ -25,9 +25,9 @@ public class NianHtmlService {
     private static ThreadPoolExecutor httpThreadPool;
 
     static {
-        htmlThreadPool = new ThreadPoolExecutor(20, 64, 0L,
+        htmlThreadPool = new ThreadPoolExecutor(32, 64, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTML"));
-        httpThreadPool = new ThreadPoolExecutor(32, 64, 0L,
+        httpThreadPool = new ThreadPoolExecutor(16, 64, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTTP"));
     }
 
