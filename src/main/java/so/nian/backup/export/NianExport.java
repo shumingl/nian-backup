@@ -35,7 +35,7 @@ public class NianExport {
                 //exportJsonDreams();
 
             } else if ("html".equals(render)) {
-                //NianHtmlService.downloadForUsers("142171");
+                //NianHtmlService.downloadForUsers("102220");
                 exportHtmlForUsers();
                 exportHtmlDreams();
 
@@ -152,6 +152,8 @@ public class NianExport {
                 , "102220"//行致
                 , "189148"//丧丧的小包子
                 , "150994"//阿城_
+                , "877866"//多雨天
+                , "821232"//多努力
 
                 , "19911"//复旦姑娘
                 , "111984"//朱迪朱迪

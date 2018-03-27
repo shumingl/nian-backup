@@ -46,8 +46,8 @@ public class NianBackupStartup {
      * 关闭应用
      */
     public static void shutdown() {
-        NianJsonService.shutdownPool();
         NianHtmlService.shutdownPool();
+        NianJsonService.shutdownPool();
         NianImageDownload.shutdownPool();
         if (monitor != null) monitor.shutdown();
         LogbackConfigure.stop();

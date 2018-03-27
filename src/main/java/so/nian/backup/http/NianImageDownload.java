@@ -13,7 +13,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.bizz.service.NamedThreadFactory;
@@ -53,7 +53,7 @@ public class NianImageDownload {
         if (exception instanceof InterruptedIOException) return false;
         if (exception instanceof UnknownHostException) return false;
         if (exception instanceof ConnectTimeoutException) return false;
-        if (exception instanceof SSLException)  return false;
+        if (exception instanceof SSLException) return false;
 
         HttpClientContext clientContext = HttpClientContext.adapt(context);
         HttpRequest request = clientContext.getRequest();
@@ -69,15 +69,15 @@ public class NianImageDownload {
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(30000)
                 .setConnectionRequestTimeout(300000)
-                .setSocketTimeout(300000)
+                //.setSocketTimeout(300000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-        imageThreadPool = new ThreadPoolExecutor(120, 200, 0L, TimeUnit.MILLISECONDS,
+        imageThreadPool = new ThreadPoolExecutor(80, 200, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new NamedThreadFactory("IMGS"));
 
         PoolingHttpClientConnectionManager imageConnectionManager = new PoolingHttpClientConnectionManager();
         imageConnectionManager.setMaxTotal(512);
-        imageConnectionManager.setDefaultMaxPerRoute(20);
+        imageConnectionManager.setDefaultMaxPerRoute(40);
         imageConnectionManager.setMaxPerRoute(new HttpRoute(new HttpHost("img.nian.so", 80)), 100);
         httpClient = HttpClients.custom()
                 .setConnectionManager(imageConnectionManager)
@@ -249,7 +249,8 @@ public class NianImageDownload {
                 request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
                 CloseableHttpResponse response = httpClient.execute(request);
                 if (response != null && response.getEntity().getContent() != null) {
-                    FileUtil.write2file(response.getEntity().getContent(), imagefile);
+                    FileUtil.save2image(response.getEntity().getContent(), imagefile);
+                    EntityUtils.consume(response.getEntity());
                     response.close();
                 } else {
                     return new HttpResultEntity(true, String.format("图片下载失败[%s/images/%s/%s]：没有获取到数据)", userid, type, image));
@@ -293,7 +294,8 @@ public class NianImageDownload {
                 request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
                 CloseableHttpResponse response = httpClient.execute(request);
                 if (response != null && response.getEntity().getContent() != null) {
-                    FileUtil.write2file(response.getEntity().getContent(), imagefile);
+                    FileUtil.save2image(response.getEntity().getContent(), imagefile);
+                    EntityUtils.consume(response.getEntity());
                     response.close();
                 } else {
                     return new HttpResultEntity(true, String.format("图片下载失败[%s/thumbs/%s/%s]：没有获取到数据)", userid, type, image));
@@ -332,11 +334,13 @@ class NianImageDownloadWorker extends Thread {
         boolean succ = false;
         String imginfo = String.format("%s/images/%s/%s", userid, type, image);
         try {
+            long start = System.currentTimeMillis();
             HttpResultEntity thumbsEntity = NianImageDownload.downloadThumbs(userid, type, image, iscover);
             if (thumbsEntity.isSuccess()) {
                 HttpResultEntity imageEntity = NianImageDownload.downloadImage(userid, type, image, iscover);
+                long end = System.currentTimeMillis();
                 if (imageEntity.isSuccess()) {
-                    logger.info(String.format("SUCC: [%s/images/%s/%s]", userid, type, image));
+                    logger.info(String.format("SUCC: [%s/images/%s/%s][%dms]", userid, type, image, end - start));
                     NianImageDownload.removeFailedImage(imginfo);
                     succ = true;
                 } else {

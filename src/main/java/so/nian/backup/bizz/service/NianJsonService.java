@@ -323,7 +323,7 @@ public class NianJsonService {
      * @param userid 用户UserID
      * @return
      */
-    public static Map<String, Object> downloadUserInfo(String userid) {
+    public static Map<String, Object> downloadUserInfo(String userid) throws IOException {
 
         // 头像
         NianImageDownload.download(userid, "head", userid + ".jpg");
@@ -341,6 +341,10 @@ public class NianJsonService {
                     List<Map<String, Object>> fans = downloadUserCareOrFans(userid, "fans");
                     userinfo.put("care", care);
                     userinfo.put("fans", fans);
+                    String cachebase = NianJsonService.getCachePath(userid, "cache");
+                    String userpath = StringUtil.path(cachebase, "user.json");
+                    String json = JsonUtil.object2Json(userinfo);
+                    Files.write(Paths.get(userpath), json.getBytes("UTF-8"));
                 }
             } else {
                 logger.error(String.format("获取用户信息失败[%s]", userid));

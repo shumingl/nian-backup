@@ -158,6 +158,7 @@ public class NianHtmlService {
                 createUserDirs(userid);
             }
             String dreamtitle = String.valueOf(StringUtil.mget(dataModel, "dream/title"));
+            NianJsonService.getJsonThreadPool().execute(new NianDreamJsonWorker(userid, dreamtitle, dreamid, dataModel));
             // 开始生成记本内容
             htmlThreadPool.execute(new NianDreamHtmlWorker(userid, dreamtitle, dreamid, dataModel));
         } catch (Exception e) {

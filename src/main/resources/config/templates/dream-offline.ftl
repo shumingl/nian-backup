@@ -108,6 +108,9 @@
             width: 60%;
             margin-left: 0px;
             text-align: left;
+            background: rgb(200, 200, 200);
+            border: none;
+            height: 1px;
         }
         .grid_wrapper {
             width: 60%;
