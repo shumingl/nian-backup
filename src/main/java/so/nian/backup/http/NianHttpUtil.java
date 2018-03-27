@@ -43,33 +43,20 @@ public class NianHttpUtil {
     private static CloseableHttpClient httpClient;
     private static PoolingHttpClientConnectionManager apiConnectionManager;
     //自定义重试策略
-    private static HttpRequestRetryHandler apiRetryHandler = new HttpRequestRetryHandler() {
+    private static HttpRequestRetryHandler apiRetryHandler = (exception, executionCount, context) -> {
+        if (executionCount >= 5) return false;
+        if (exception instanceof InterruptedIOException) return false;
+        if (exception instanceof UnknownHostException) return false;
+        if (exception instanceof ConnectTimeoutException) return false;
+        if (exception instanceof SSLException)  return false;
 
-        public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-            //Do not retry if over max retry count
-            if (executionCount >= 5) return false;
-            //Timeout
-            if (exception instanceof InterruptedIOException) return false;
-            //Unknown host
-            if (exception instanceof UnknownHostException) return false;
-            //Connection refused
-            if (exception instanceof ConnectTimeoutException) return false;
-            //SSL handshake exception
-            if (exception instanceof SSLException)  return false;
-
-            HttpClientContext clientContext = HttpClientContext.adapt(context);
-            HttpRequest request = clientContext.getRequest();
-            boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
-            //Retry if the request is considered idempotent
-            //如果请求类型不是HttpEntityEnclosingRequest，被认为是幂等的，那么就重试
-            //HttpEntityEnclosingRequest指的是有请求体的request，比HttpRequest多一个Entity属性
-            //而常用的GET请求是没有请求体的，POST、PUT都是有请求体的
-            //Rest一般用GET请求获取数据，故幂等，POST用于新增数据，故不幂等
-            if (idempotent) {
-                return true;
-            }
-            return false;
+        HttpClientContext clientContext = HttpClientContext.adapt(context);
+        HttpRequest request = clientContext.getRequest();
+        boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+        if (idempotent) {
+            return true;
         }
+        return false;
     };
 
     static {

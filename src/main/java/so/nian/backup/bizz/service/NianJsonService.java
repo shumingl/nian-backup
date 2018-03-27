@@ -55,6 +55,12 @@ public class NianJsonService {
         }
     }
 
+    /**
+     * 创建与用户目录
+     *
+     * @param userid 用户ID
+     * @throws IOException
+     */
     public static void createUserDirs(String userid) throws IOException {
         // 创建用户目录
         String cachebase = AppConfig.getNianCacheBase();
@@ -64,6 +70,13 @@ public class NianJsonService {
         NianHtmlService.createUserDirs(userid);
     }
 
+    /**
+     * 通过邮箱及密码登录
+     *
+     * @param email    邮箱
+     * @param password 密码
+     * @return
+     */
     public static boolean loginByAuth(String email, String password) {
         HttpResultEntity result = NianHttpUtil.login(email, password);
         Map<String, Object> login;
@@ -77,11 +90,24 @@ public class NianJsonService {
         }
     }
 
+    /**
+     * 登录成功后，会得到shell信息，根据shell信息可进行持续验证
+     *
+     * @param uid   用户ID
+     * @param shell 登录shell
+     */
     public static void loginByShell(String uid, String shell) {
         NianHttpUtil.LOGINFO.put("uid", uid);
         NianHttpUtil.LOGINFO.put("shell", shell);
     }
 
+    /**
+     * 登录后进行下载
+     *
+     * @param email    邮箱
+     * @param password 密码
+     * @throws IOException
+     */
     public static void downloadByLogin(String email, String password) throws IOException {
         HttpResultEntity result = NianHttpUtil.login(email, password);
         Map<String, Object> login;
@@ -97,6 +123,12 @@ public class NianJsonService {
 
     }
 
+    /**
+     * 多用户公共记本数据下载
+     *
+     * @param users 用户ID列表
+     * @throws IOException
+     */
     public static void downloadForUsers(String... users) throws IOException {
         if (users != null && users.length > 0) {
             for (String userid : users)
@@ -104,6 +136,12 @@ public class NianJsonService {
         }
     }
 
+    /**
+     * 下载单用户公共记本数据
+     *
+     * @param userid 用户ID
+     * @throws IOException
+     */
     public static void downloadForUser(String userid) throws IOException {
         if (userid == null) {
             throw new RuntimeException("[downloadForUser]登录信息为空");
@@ -124,6 +162,13 @@ public class NianJsonService {
         }
     }
 
+    /**
+     * 根据用户UserID下载公共记本数据
+     *
+     * @param username 用户名
+     * @param userid   用户UserID
+     * @throws IOException
+     */
     private static void downloadDreams(String username, String userid) throws IOException {
 
         logger.info(String.format("用户[%s(%s)]开始下载", username, userid));
@@ -146,10 +191,22 @@ public class NianJsonService {
         logger.info(String.format("用户[%s(%s)]记本下载完成", username, userid));
     }
 
+    /**
+     * 下载用户的记本数据（线程下载）
+     *
+     * @param userid  UserID
+     * @param dreamid 记本ID
+     */
     public static void downloadDream(String userid, String dreamid) {
         httpThreadPool.execute(new NianDreamHttpWorker("json", userid, dreamid));
     }
 
+    /**
+     * 生成用户数据JSON数据
+     *
+     * @param userid  用户UserID
+     * @param dreamid 记本ID
+     */
     public static void generateDreamJson(String userid, String dreamid) {
         try {
             Map<String, Object> dataModel = NianJsonService.downloadAllSteps(userid, dreamid);
@@ -176,49 +233,49 @@ public class NianJsonService {
         }
     }
 
-    private static Map<String, Object> checkupdate(String userid, String dreamid) throws IOException {
+    /**
+     * 检查是否有数据更新
+     *
+     * @param userid  用户ID
+     * @param dreamid 记本ID
+     * @return
+     * @throws IOException
+     */
+    private static boolean checkupdate(String userid, String dreamid) throws IOException {
 
         String basepath = NianJsonService.getCachePath(userid, "dream");
-        String summaryfile = StringUtil.path(basepath, dreamid + "-info.json");
-        File summary = new File(summaryfile);
-        String cachefile = StringUtil.path(basepath, dreamid + ".json");
-        File cache = new File(cachefile);
-        Map<String, Object> httpjson = null;
+        File summary = new File(StringUtil.path(basepath, dreamid + "-info.json"));
+        File cache = new File(StringUtil.path(basepath, dreamid + ".json"));
+
         // 检查是否需要重新下载
-        Map<String, Object> result = new HashMap<>();
         if (!summary.exists() || !cache.exists()) {
-            result.put("reload", true);
-            result.put("first", null);
-            return result;
+            return true;
+
         } else {
-            byte[] sbytes = Files.readAllBytes(Paths.get(summaryfile));
-            Map<String, Object> localdream = JsonUtil.json2Map(new String(sbytes, "UTF-8"));
-            httpjson = NianJsonService.downloadFirstPageSteps(dreamid);
-            //比较数据是否有更新
-            result.put("first", httpjson);
+            Map<String, Object> httpjson = NianJsonService.downloadFirstPageSteps(dreamid);
             if (httpjson != null && httpjson.size() > 0) {
                 Map<String, Object> httpdream = (Map<String, Object>) httpjson.get("dream");
-                if (localdream != null && localdream.size() > 0 && httpdream != null && httpdream.size() > 0) {
-                    if (localdream.get("lastdate").equals(httpdream.get("lastdate")) &&
-                            localdream.get("step").equals(httpdream.get("step")) &&
-                            localdream.get("like_step").equals(httpdream.get("like_step")) &&
-                            localdream.get("followers").equals(httpdream.get("followers")) &&
-                            localdream.get("title").equals(httpdream.get("title")) &&
-                            localdream.get("content").equals(httpdream.get("content"))) {
-                        result.put("reload", false);
-                    } else {
-                        result.put("reload", true);
-                    }
-                } else {// 本地cache或http获取数据中，dream为空
-                    result.put("reload", true);
+                Map<String, Object> localdream = NianJsonService.takeoutCache(userid, dreamid, "dinfo");
+                if (localdream == null || localdream.size() == 0)
+                    return true;
+
+                if (httpdream != null && httpdream.size() > 0) {    //比较数据是否有更新
+                    return checkDreamChange(localdream, httpdream);
+                } else {        // 本地cache或http获取数据中，dream为空
+                    throw new RuntimeException(String.format("[%s/%s]下载首页数据失败", userid, dreamid));
                 }
-            } else {// http获取数据为空
-                result.put("reload", true);
+            } else {            // http获取数据为空
+                throw new RuntimeException(String.format("[%s/%s]下载首页数据失败", userid, dreamid));
             }
         }
-        return result;
     }
 
+    /**
+     * 下载记本第一页数据
+     *
+     * @param dreamid
+     * @return
+     */
     private static Map<String, Object> downloadFirstPageSteps(String dreamid) {
         Map<String, Object> data = null;
         HttpResultEntity entity = NianHttpUtil.steps(dreamid, 1);
@@ -229,12 +286,20 @@ public class NianJsonService {
                 logger.info(String.format("记本[%s(%s)]首页下载成功", dreamtitle, dreamid));
             }
         } else {
-            logger.info(String.format("记本[%s]首页下载失败[HTTP/%s]：%s", dreamid,
-                    entity.getStatusCode(), entity.getMessage()));
+            String msg = String.format("记本[%s]首页下载失败[HTTP/%s]：%s", dreamid,
+                    entity.getStatusCode(), entity.getMessage());
+            throw new RuntimeException(msg);
         }
         return data;
     }
 
+    /**
+     * 加载本地缓存数据
+     *
+     * @param userid  用户UserID
+     * @param dreamid 记本ID
+     * @return
+     */
     public static Map<String, Object> downloadFromLocal(String userid, String dreamid) {
         String dreambase = NianJsonService.getCachePath(userid, "dream");
         String dreampath = StringUtil.path(dreambase, dreamid + ".json");
@@ -252,6 +317,12 @@ public class NianJsonService {
         return data;
     }
 
+    /**
+     * 下载用户信息
+     *
+     * @param userid 用户UserID
+     * @return
+     */
     public static Map<String, Object> downloadUserInfo(String userid) {
 
         // 头像
@@ -292,6 +363,12 @@ public class NianJsonService {
         return data;
     }
 
+    /**
+     * 下载用户记本数据
+     *
+     * @param userid 用户ID
+     * @return
+     */
     public static Map<String, Object> downloadUserDreams(String userid) {
 
         String model = AppConfig.getNianRenderModel();
@@ -340,6 +417,13 @@ public class NianJsonService {
         return data;
     }
 
+    /**
+     * 下载记本所有进展数据
+     *
+     * @param userid  用户ID
+     * @param dreamid 记本ID
+     * @return
+     */
     public static Map<String, Object> downloadAllSteps(String userid, String dreamid) {
         // 获取数据
         String model = AppConfig.getNianRenderModel();
@@ -401,46 +485,56 @@ public class NianJsonService {
         }
     }
 
-    public static Map<String, Object> downloadFromApi(String userid, String dreamid) {
-        String dreamtitle = "";
-        int steptotal = 0;
-        String cachepath = NianJsonService.getCachePath(userid, "dream");
-        try {
-            Map<String, Object> dataModel = new HashMap<>();
-
-            // 检查是否有更新并返回第一页数据内容
-            Map<String, Object> update = checkupdate(userid, dreamid);
-            int page = 2;
-            boolean reload = (Boolean) update.get("reload");
-            Map<String, Object> first = (Map<String, Object>) update.get("first");
-            if (!reload) {//不需要更新
-                dreamtitle = String.valueOf(StringUtil.mget(first, "dream/title"));
-                logger.info(String.format("记本[%s(%s)]没有数据更新", dreamtitle, dreamid));
-                String dreamcachepath = StringUtil.path(cachepath, dreamid + ".json");
-                byte[] dreamcachebytes = Files.readAllBytes(Paths.get(dreamcachepath));
-                String dreamcachejson = new String(dreamcachebytes, "UTF-8");
-                Map<String, Object> cache = JsonUtil.json2Map(dreamcachejson);
-                return cache;
-
-            } else {
-                logger.info(String.format("记本[%s]开始下载", dreamid));
-                if (first != null) {
-                    dataModel.putAll(first);
-                    Map<String, Object> dream = (Map<String, Object>) first.get("dream");
-                    if (dream != null) {
-                        dreamtitle = String.valueOf(dream.get("title"));
-                        steptotal = Integer.valueOf(String.valueOf(dream.get("step")));
-                        logger.info(String.format("记本[%s(%s)]共有[%d]条进展", dreamtitle, dreamid, steptotal));
-                    }
-                    page = 2;
-                } else {//有更新，但是没有第一页数据（摘要文件不存在的情况）
-                    page = 1;
-                }
+    public static boolean checkStepPageUpdate(Map<String, String> cacheIndex, List<Map<String, Object>> stepList) {
+        // 检查数据是否有变动
+        boolean hasChanged = false;
+        for (Map<String, Object> dest : stepList) {
+            String destStepId = (String) dest.get("sid");
+            String destVal = parser.parse("${lastdate}/${comments}/${likes}", dest);
+            if (cacheIndex.containsKey(destStepId)) {
+                String localVal = cacheIndex.get(destStepId);
+                if (!localVal.equals(destVal))// 找到进展且有更新
+                    hasChanged = true;
+            } else { // 没找到则有更新
+                hasChanged = true;
+                break;
             }
+        }
+        return hasChanged;
+    }
+
+    /**
+     * 从念的服务器下载数据
+     *
+     * @param userid  用户ID
+     * @param dreamid 记本ID
+     * @return
+     */
+    public static Map<String, Object> downloadFromApi(String userid, String dreamid) {
+        try {
+
+            Map<String, Object> dataModel = new HashMap<>();
             List<Map<String, Object>> steps = new ArrayList<>();
 
-            // 读取剩余的全部进展内容
+            // 本地缓存
+            Map<String, String> cacheIndex = null;
+            Map<String, Object> dreamCache = NianJsonService.takeoutCache(userid, dreamid, "dream");
+            List<Map<String, Object>> cacheSteps = null;
+            if (dreamCache != null) {
+                cacheIndex = new LinkedHashMap<>();
+                cacheSteps = (List<Map<String, Object>>) dreamCache.get("steps");
+                for (Map<String, Object> step : cacheSteps) {
+                    String stepId = (String) step.get("sid");
+                    String val = parser.parse("${lastdate}/${comments}/${likes}", step);
+                    cacheIndex.put(stepId, val);
+                }
+            }
+
+            // 从第1页开始读取数据
+            int steptotal = 0;
+            String dreamtitle = "";
             int finished = 0;
+            int page = 1;
             while (true) {
                 HttpResultEntity entity = NianHttpUtil.steps(dreamid, page);
                 if (entity.isSuccess()) {
@@ -449,20 +543,55 @@ public class NianJsonService {
                         if (page == 1) {
                             dataModel.putAll(data);
                             Map<String, Object> dream = (Map<String, Object>) data.get("dream");
-                            if (dream != null) {
-                                dreamtitle = String.valueOf(dream.get("title"));
-                                steptotal = Integer.valueOf(String.valueOf(dream.get("step")));
-                                logger.info(String.format("记本[%s(%s)]共有[%d]条进展", dreamtitle, dreamid, steptotal));
-                            }
+                            if (dream == null)
+                                throw new RuntimeException(String.format("记本[%s]信息获取失败", dreamid));
+                            dreamtitle = String.valueOf(dream.get("title"));
+                            steptotal = Integer.valueOf(String.valueOf(dream.get("step")));
+                            logger.info(String.format("记本[%s(%s)]共有[%d]条进展", dreamtitle, dreamid, steptotal));
                         }
+
                         List<Map<String, Object>> list = (List<Map<String, Object>>) data.get("steps");
                         if (list == null || list.size() == 0) {
                             logger.info(String.format("记本[%s(%s)]下载完成", dreamtitle, dreamid));
                             break;
                         } else {
+
+                            // 获取评论
+                            for (Map<String, Object> step : list) {
+                                step.put("stepcomments", new ArrayList<>());
+                                step.put("steplikes", new ArrayList<>());
+                                String stepid = String.valueOf(step.get("sid"));
+                                Integer datacmts = Integer.valueOf(String.valueOf(step.get("comments")));
+                                if (datacmts > 0) {
+                                    List<Map<String, Object>> comments = downloadStepALlComments(stepid, datacmts);
+                                    step.put("stepcomments", comments);
+                                }
+                            }
+
                             finished += list.size();
                             steps.addAll(list);
                             logger.info(String.format("记本[%s(%s)]第%04d页进展下载成功(%d/%d)", dreamtitle, dreamid, page, finished, steptotal));
+
+                            if (cacheIndex != null) { // 如果没有本地缓存，则不检查，执行全量下载
+                                boolean hasChanged = checkStepPageUpdate(cacheIndex, list);
+                                // 当页数据没有更新，则不再下载后续的进展
+                                if (!hasChanged) {
+                                    // 没有更新说明对当前页的数据发生了全部比对
+                                    // 当前页的最后一条进展ID，下一条就是历史数据
+                                    String beginStepId = (String) list.get(list.size() - 1).get("sid");
+                                    boolean ismatched = false;
+                                    for (int i = 0; i < cacheSteps.size(); i++) {
+                                        String sid = (String) cacheSteps.get(i).get("sid");
+                                        if (!ismatched) {
+                                            if (beginStepId.equals(sid)) ismatched = true;
+                                        } else {
+                                            steps.add(cacheSteps.get(i));
+                                        }
+                                    }
+                                    logger.info(String.format("记本[%s(%s)]从本地缓存获取剩余数据(total=%d)", dreamtitle, dreamid, steps.size()));
+                                    break; // exit while
+                                }
+                            }
                         }
                         page++;
                     } else {
@@ -473,31 +602,6 @@ public class NianJsonService {
                 }
             }
 
-            /*
-            Map<String, Object> dreaminfo = (Map<String, Object>) dataModel.get("dream");
-            if (dreaminfo != null) {
-                dreaminfo.put("dlike", downloadDreamLikeOrFans(dreamid, "like"));// 获取记本点赞用户
-                dreaminfo.put("dfans", downloadDreamLikeOrFans(dreamid, "fans"));// 获取记本关注用户
-            }
-            */
-
-            // 获取进展评论和点赞用户
-            int fin = 0;
-            int total = steps.size();
-            for (Map<String, Object> step : steps) {
-                step.put("stepcomments", new ArrayList<>());
-                step.put("steplikes", new ArrayList<>());
-                String stepid = String.valueOf(step.get("sid"));
-                Integer datacmts = Integer.valueOf(String.valueOf(step.get("comments")));
-                if (datacmts > 0) {
-                    List<Map<String, Object>> comments = downloadStepALlComments(stepid, datacmts);
-                    step.put("stepcomments", comments);
-                    logger.info(String.format("记本[%s(%s)]加载进展评论(%d/%d)", dreamtitle, dreamid, fin, total));
-                }
-                //Integer datalike = Integer.valueOf(String.valueOf(step.get("likes")));
-                //if (datalike > 0) step.put("steplikes", downloadStepAllLike(stepid));
-                fin++;
-            }
             dataModel.put("steps", steps);
             return dataModel;
         } catch (Exception e) {
@@ -506,6 +610,12 @@ public class NianJsonService {
         return null;
     }
 
+    /**
+     * 下载进展全部点赞用户
+     *
+     * @param stepid
+     * @return
+     */
     public static List<Map<String, Object>> downloadStepAllLike(String stepid) {
         List<Map<String, Object>> result = new ArrayList<>();
         int page = 1;
@@ -526,6 +636,13 @@ public class NianJsonService {
         return result;
     }
 
+    /**
+     * 下载进展全部评论
+     *
+     * @param stepid 记本ID
+     * @param total  总数，用于分页和最后一页判断
+     * @return
+     */
     public static List<Map<String, Object>> downloadStepALlComments(String stepid, int total) {
         List<Map<String, Object>> temp = new ArrayList<>();
         if (total == 0) return temp;
@@ -538,16 +655,13 @@ public class NianJsonService {
                 if (data != null) {
                     List<Map<String, Object>> comments = (List<Map<String, Object>>) data.get("comments");
                     if (comments == null || comments.size() == 0) { //获取评论为空说明加载完成
-                        //logger.info(String.format("进展[%s]评论加载完成(%d/%d)", stepid, finished, total));
                         break;
                     } else {
                         finished += comments.size();
                         temp.addAll(comments);
-                        //logger.info(String.format("进展[%s]加载第%03d页评论(%d/%d)", stepid, page, finished, total));
                         // 最后一页数据比pageSize要小。
                         Integer pageSize = Integer.valueOf(String.valueOf(data.get("perPage")));
                         if (comments.size() < pageSize) {
-                            //logger.info(String.format("进展[%s]评论加载完成(%d/%d)", stepid, finished, total));
                             break;
                         }
                     }
@@ -563,6 +677,13 @@ public class NianJsonService {
         return result;
     }
 
+    /**
+     * 下载用户的关注和粉丝数据
+     *
+     * @param userid 用户ID
+     * @param type   类型(care/fans)
+     * @return
+     */
     public static List<Map<String, Object>> downloadUserCareOrFans(String userid, String type) {
         List<Map<String, Object>> result = new ArrayList<>();
         int page = 0;
@@ -590,6 +711,13 @@ public class NianJsonService {
         return result;
     }
 
+    /**
+     * 下载记本的点赞用户或关注用户
+     *
+     * @param dreamid 记本ID
+     * @param type    类型(like/fans)
+     * @return
+     */
     public static List<Map<String, Object>> downloadDreamLikeOrFans(String dreamid, String type) {
         List<Map<String, Object>> result = new ArrayList<>();
         int page = 1;
@@ -615,6 +743,50 @@ public class NianJsonService {
             }
         }
         return result;
+    }
+
+    /**
+     * 取出本地缓存数据
+     *
+     * @param userid  用户ID
+     * @param dreamid 记本ID
+     * @param type    类型（user/list/dream/dinfo）用户信息/记本列表/记本内容
+     * @return
+     */
+    public static Map<String, Object> takeoutCache(String userid, String dreamid, String type) throws IOException {
+        String filename;
+        if ("user".equals(type)) {
+            filename = StringUtil.path(getCachePath(userid, "cache"), "user.json");
+        } else if ("list".equals(type)) {
+            filename = StringUtil.path(getCachePath(userid, "cache"), "dreams.json");
+        } else if ("dream".equals(type)) {
+            filename = StringUtil.path(getCachePath(userid, "dream"), dreamid + ".json");
+        } else if ("dinfo".equals(type)) {
+            filename = StringUtil.path(getCachePath(userid, "dream"), dreamid + "-info.json");
+        } else {
+            return null;
+        }
+        File file = new File(filename);
+        if (!file.exists())
+            return null;
+        byte[] bytes = Files.readAllBytes(Paths.get(filename));
+        String json = new String(bytes, "UTF-8");
+        Map<String, Object> cache = JsonUtil.json2Map(json);
+        return cache;
+    }
+
+    public static boolean checkDreamChange(Map<String, Object> local, Map<String, Object> dest) {
+        if (local == null || dest == null)
+            return true;
+        //比较数据是否有更新
+        String template = "${lastdate}/${step}/${like_step}/${followers}";
+        String localVal = parser.parse(template, local);
+        String destVal = parser.parse(template, dest);
+        if (localVal.equals(destVal)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static void shutdownPool() {

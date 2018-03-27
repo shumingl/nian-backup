@@ -2,7 +2,6 @@ package so.nian.backup.export;
 
 import so.nian.backup.bizz.service.NianHtmlService;
 import so.nian.backup.bizz.service.NianJsonService;
-import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.startup.NianBackupStartup;
 
 import java.io.IOException;
@@ -11,30 +10,41 @@ import java.util.Map;
 
 public class NianExport {
 
+    private static Map<String, String> shells;
+
     public static void main(String[] args) {
 
         NianBackupStartup.startup();
+        shells = new HashMap<>();
+        shells.put("102220", "41477424d85ca604d15b6eb72d635206");//行致
+        shells.put("8278", "7c2474bf1f7feaf5cf997b89ddf8006b");//淡淡淡淡
+        shells.put("142171", "077682926c004802b79883b94428a827");//罗生
 
-        Map<String, String> user = new HashMap<>();
-
-        //NianHttpUtil.LOGINFO.put("uid", "142171");
-        //NianHttpUtil.LOGINFO.put("name", "罗生_");
-        //NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
+        /*if (!NianJsonService.loginByAuth("vic_jinghang@hotmail.com", "10.2385753")) {
+            throw new RuntimeException("用户登录失败");
+        }*/
 
         String render = "html";
         try {
-            if (!NianJsonService.loginByAuth("vic_jinghang@hotmail.com", "10.2385753"))
-                throw new RuntimeException("用户登录失败");
-            //NianJsonService.loginByShell("142171", "077682926c004802b79883b94428a827");
+            String authuser = "142171";
+            String authshell = shells.get(authuser);
+            NianJsonService.loginByShell(authuser, authshell);
 
             if ("json".equals(render)) {
                 //exportJsonForUsers();
                 //exportJsonDreams();
-                //exportJsonPriDreams();
+
             } else if ("html".equals(render)) {
+                //NianHtmlService.downloadForUsers("142171");
                 exportHtmlForUsers();
                 exportHtmlDreams();
-                //exportHtmlPriDreams();
+
+                /*exportHtmlPriDreams("8278"
+                        , "14859"//三
+                        , "24675"//画点什么
+                        , "250070"//学
+                        , "309089"//空白
+                );*/
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -181,20 +191,20 @@ public class NianExport {
     public static void exportJsonForPriUsers() {
     }
 
-    public static void exportJsonPriDreams() {
-        NianJsonService.downloadDream("8278", "14859");//三
-        NianJsonService.downloadDream("8278", "24675");//画点什么
-        NianJsonService.downloadDream("8278", "250070");//学
-        NianJsonService.downloadDream("8278", "309089");//空白
+    public static void exportJsonPriDreams(String userid, String... dreamids) {
+        NianJsonService.loginByShell(userid, shells.get(userid));
+        for (String dreamid : dreamids) {
+            NianJsonService.downloadDream(userid, dreamid);
+        }
     }
 
     public static void exportHtmlForPriUsers() {
     }
 
-    public static void exportHtmlPriDreams() {
-        NianHtmlService.downloadDream("8278", "14859");//三
-        NianHtmlService.downloadDream("8278", "24675");//画点什么
-        NianHtmlService.downloadDream("8278", "250070");//学
-        NianHtmlService.downloadDream("8278", "309089");//空白
+    public static void exportHtmlPriDreams(String userid, String... dreamids) {
+        NianJsonService.loginByShell(userid, shells.get(userid));
+        for (String dreamid : dreamids) {
+            NianHtmlService.downloadDream(userid, dreamid);
+        }
     }
 }

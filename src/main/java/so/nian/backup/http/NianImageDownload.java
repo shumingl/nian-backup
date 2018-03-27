@@ -1,13 +1,19 @@
 package so.nian.backup.http;
 
+import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.bizz.service.NamedThreadFactory;
@@ -15,8 +21,11 @@ import so.nian.backup.config.AppConfig;
 import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.StringUtil;
 
+import javax.net.ssl.SSLException;
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.UnknownHostException;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -35,15 +44,32 @@ public class NianImageDownload {
     private static ThreadPoolExecutor imageThreadPool = null;
     private static List<Map<String, String>> imagesCache = new ArrayList<>();
     private static Map<String, Integer> failedImages;
-    private static final int MAX_RETRY = 10;
+    private static final int MAX_RETRY = 32;
     private static CloseableHttpClient httpClient;
+
+    //自定义重试策略
+    private static HttpRequestRetryHandler imageRetryHandler = (exception, executionCount, context) -> {
+        if (executionCount >= 10) return false;
+        if (exception instanceof InterruptedIOException) return false;
+        if (exception instanceof UnknownHostException) return false;
+        if (exception instanceof ConnectTimeoutException) return false;
+        if (exception instanceof SSLException)  return false;
+
+        HttpClientContext clientContext = HttpClientContext.adapt(context);
+        HttpRequest request = clientContext.getRequest();
+        boolean idempotent = !(request instanceof HttpEntityEnclosingRequest);
+        if (idempotent) {
+            return true;
+        }
+        return false;
+    };
 
     public static void startup() {
 
         requestConfig = RequestConfig.custom()
-                .setConnectTimeout(60000)
+                .setConnectTimeout(30000)
                 .setConnectionRequestTimeout(300000)
-                .setSocketTimeout(1800000)
+                .setSocketTimeout(300000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
         imageThreadPool = new ThreadPoolExecutor(120, 200, 0L, TimeUnit.MILLISECONDS,
@@ -55,6 +81,7 @@ public class NianImageDownload {
         imageConnectionManager.setMaxPerRoute(new HttpRoute(new HttpHost("img.nian.so", 80)), 100);
         httpClient = HttpClients.custom()
                 .setConnectionManager(imageConnectionManager)
+                .setRetryHandler(imageRetryHandler)
                 .build();
         failedImages = new ConcurrentHashMap<>();
     }
