@@ -268,7 +268,7 @@ public class StringUtil {
      * @param paths
      * @return
      */
-    public static String generatePath(String... paths) {
+    public static String path(String... paths) {
         if (paths == null || paths.length == 0)
             return "";
         StringBuilder result = new StringBuilder();

@@ -16,6 +16,7 @@ public class NianJsonHandler implements ResponseHandler<HttpResultEntity> {
 
     @Override
     public HttpResultEntity handleResponse(final HttpResponse response) throws IOException {
+        response.setHeader("Content-Type", "text/html; charset=UTF-8");
         HttpResultEntity result = new HttpResultEntity();
         StatusLine statusLine = response.getStatusLine();
         int status = statusLine.getStatusCode();
@@ -25,17 +26,22 @@ public class NianJsonHandler implements ResponseHandler<HttpResultEntity> {
         result.setResponse(response);
         if (status >= 200 && status < 300) {//[200,300)为成功状态
             HttpEntity entity = response.getEntity();
-            result.setResponseBody(EntityUtils.toString(entity));
+            String body = EntityUtils.toString(entity, "UTF-8");
+            result.setResponseBody(body);
             Map<String, Object> map = result.getResponseMap();
             if (map == null) {
                 result.setSuccess(false);
                 result.setMessage("转换Map数据为空");
             } else {
-                String error = String.valueOf(map.get("error"));
-                if ("0".equals(error))
+                if(map.containsKey("error")) {
+                    String error = String.valueOf(map.get("error"));
+                    if ("0".equals(error))
+                        result.setSuccess(true);
+                    else
+                        result.setSuccess(false);
+                } else {
                     result.setSuccess(true);
-                else
-                    result.setSuccess(false);
+                }
             }
             EntityUtils.consume(entity);
         } else {

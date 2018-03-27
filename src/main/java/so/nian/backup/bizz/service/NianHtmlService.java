@@ -3,16 +3,10 @@ package so.nian.backup.bizz.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.config.AppConfig;
-import so.nian.backup.http.HttpResultEntity;
-import so.nian.backup.http.NianHttpUtil;
-import so.nian.backup.http.NianImageDownload;
-import so.nian.backup.utils.ExpressionParser;
 import so.nian.backup.utils.StringUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -24,11 +18,20 @@ public class NianHtmlService {
     private static ThreadPoolExecutor htmlThreadPool;
     private static ThreadPoolExecutor httpThreadPool;
 
-    static {
-        htmlThreadPool = new ThreadPoolExecutor(32, 64, 0L,
+    public static void startup() {
+
+        htmlThreadPool = new ThreadPoolExecutor(20, 64, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTML"));
-        httpThreadPool = new ThreadPoolExecutor(16, 64, 0L,
+        httpThreadPool = new ThreadPoolExecutor(40, 64, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTTP"));
+    }
+
+    public static ThreadPoolExecutor getHttpThreadPool() {
+        return httpThreadPool;
+    }
+
+    public static ThreadPoolExecutor getHtmlThreadPool() {
+        return htmlThreadPool;
     }
 
     public static void shutdownPool() {
@@ -81,9 +84,6 @@ public class NianHtmlService {
             for (String userid : users)
                 downloadForUser(userid);
         }
-        NianJsonService.shutdownPool();
-        NianHtmlService.shutdownPool();
-        NianImageDownload.shutdownPool();
     }
 
     public static void createUserDirs(String userid) throws IOException {
@@ -104,68 +104,36 @@ public class NianHtmlService {
 
     private static void downloadForUser(String userid) throws IOException {
 
-        ExpressionParser parser = ExpressionParser.getDefault();
         // 创建用户目录
         createUserDirs(userid);
-        String basepath = AppConfig.getNianViewsBase();
         // 下载用户信息
-        boolean isloadinfo = false;
-        Map<String, Object> userinfo;
-        String username = "";
-        HttpResultEntity info = NianHttpUtil.info(userid);
-        if (info != null && info.isSuccess()) {
-            Map<String, Object> data = (Map<String, Object>) info.getResponseMap().get("data");
-            if (data != null) {
-                userinfo = (Map<String, Object>) data.get("user");
-                if (userinfo != null) {
-                    Object uid = userinfo.get("uid");
-                    if (uid != null) {
-                        String template = "名称 : ${name}; \n" +
-                                "UID  : ${uid}; \n" +
-                                "邮箱 : ${email}; \n" +
-                                "硬币 : ${coin}; \n" +
-                                "关注 : ${follows}; \n" +
-                                "粉丝 : ${followed}; \n" +
-                                "获赞 : ${likes}; \n" +
-                                "梦想 : ${dream}; \n" +
-                                "进展 : ${step}; \n";
-                        String userInfoString = parser.parse(template, userinfo);
-                        Files.write(Paths.get(basepath, userid, "userinfo.txt"), userInfoString.getBytes());
-                        username = String.valueOf(userinfo.get("name"));
-                        isloadinfo = true;
-                    }
-                }
-            } else {
-                logger.error(String.format("获取用户信息为空[%s]", userid));
+        Map<String, Object> data = NianJsonService.downloadUserInfo(userid);
+        if (data != null) {
+            Map<String, Object> userinfo = (Map<String, Object>) data.get("user");
+            if (userinfo == null)
+                throw new RuntimeException(String.format("用户[%s]信息获取失败", userid));
+            else {
+                String username = String.valueOf(userinfo.get("name"));
+                downloadDreams(username, userid);// 下载用户的记本
             }
         } else {
-            logger.error(String.format("获取用户信息失败[%s]", userid));
+            logger.error(String.format("用户[%s]信息获取为空", userid));
         }
-        if (!isloadinfo) return;
-
-        // 下载用户的记本
-        downloadDreams(username, userid);
     }
 
     private static void downloadDreams(String username, String userid) {
-
         logger.info(String.format("用户[%s(%s)]开始下载", username, userid));
-        HttpResultEntity entity = NianHttpUtil.dreams(userid);
-        if (entity.isSuccess()) {
-            Map<String, Object> data = (Map<String, Object>) entity.getResponseMap().get("data");
-            if (data != null) {
-                List<Map<String, Object>> dreams = (List<Map<String, Object>>) data.get("dreams");
-                logger.info(String.format("用户[%s(%s)]记本数量：[%d]", username, userid, dreams.size()));
-                for (Map<String, Object> dream : dreams) {
-                    downloadDream(userid, String.valueOf(dream.get("id")));
-                }
-            } else {
-                logger.info(String.format("用户[%s(%s)]记本列表为空：%s", username, userid, entity.getResponseBody()));
+        Map<String, Object> data = NianJsonService.downloadUserDreams(userid);
+        if (data != null) {
+            List<Map<String, Object>> dreams = (List<Map<String, Object>>) data.get("dreams");
+            logger.info(String.format("用户[%s(%s)]记本数量：[%d]", username, userid, dreams.size()));
+            for (Map<String, Object> dream : dreams) {
+                downloadDream(userid, String.valueOf(dream.get("id")));
             }
+            logger.info(String.format("用户[%s(%s)]记本下载完成", username, userid));
         } else {
-            logger.error(String.format("用户[%s(%s)]记本列表下载失败：%s", username, userid, entity.getMessage()));
+            logger.info(String.format("用户[%s(%s)]记本列表为空", username, userid));
         }
-        logger.info(String.format("用户[%s(%s)]记本下载完成", username, userid));
     }
 
     public static void downloadDream(String userid, String dreamid) {
@@ -190,8 +158,6 @@ public class NianHtmlService {
                 createUserDirs(userid);
             }
             String dreamtitle = String.valueOf(StringUtil.mget(dataModel, "dream/title"));
-            // 记录到缓存文件中
-            htmlThreadPool.execute(new NianDreamJsonWorker(userid, dreamtitle, dreamid, dataModel));
             // 开始生成记本内容
             htmlThreadPool.execute(new NianDreamHtmlWorker(userid, dreamtitle, dreamid, dataModel));
         } catch (Exception e) {

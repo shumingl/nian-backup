@@ -75,7 +75,7 @@ public class ReportTemplateFactory {
      * @return
      */
     public boolean isTemplateFileExists(String filename) {
-        String fullname = StringUtil.generatePath(templatePath, filename);
+        String fullname = StringUtil.path(templatePath, filename);
         File file = new File(fullname);
         if (file.exists() && file.isFile())
             return true;

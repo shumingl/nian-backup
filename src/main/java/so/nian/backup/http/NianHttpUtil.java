@@ -4,7 +4,6 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
@@ -41,31 +40,22 @@ public class NianHttpUtil {
     public static final Map<String, String> PROC = new HashMap<>();
     private static final ExpressionParser parser = ExpressionParser.getDefault();
     private static RequestConfig requestConfig = null;
+    private static CloseableHttpClient httpClient;
     private static PoolingHttpClientConnectionManager apiConnectionManager;
     //自定义重试策略
     private static HttpRequestRetryHandler apiRetryHandler = new HttpRequestRetryHandler() {
 
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
             //Do not retry if over max retry count
-            if (executionCount >= 5) {
-                return false;
-            }
+            if (executionCount >= 5) return false;
             //Timeout
-            if (exception instanceof InterruptedIOException) {
-                return false;
-            }
+            if (exception instanceof InterruptedIOException) return false;
             //Unknown host
-            if (exception instanceof UnknownHostException) {
-                return false;
-            }
+            if (exception instanceof UnknownHostException) return false;
             //Connection refused
-            if (exception instanceof ConnectTimeoutException) {
-                return false;
-            }
+            if (exception instanceof ConnectTimeoutException) return false;
             //SSL handshake exception
-            if (exception instanceof SSLException) {
-                return false;
-            }
+            if (exception instanceof SSLException)  return false;
 
             HttpClientContext clientContext = HttpClientContext.adapt(context);
             HttpRequest request = clientContext.getRequest();
@@ -78,12 +68,9 @@ public class NianHttpUtil {
             if (idempotent) {
                 return true;
             }
-
             return false;
         }
     };
-
-    private static CloseableHttpClient httpClient;
 
     static {
 
@@ -103,8 +90,8 @@ public class NianHttpUtil {
         URLS.put("like", "http://api.nian.so/v2/step/${stepid}/like/users?page=${page}&uid=${uid}&shell=${shell}");
         URLS.put("care", "http://nian.so/api/user_fo_list2.php?page=${page}&uid=${euid}&myuid=${uid}");
         URLS.put("fans", "http://nian.so/api/user_foed_list2.php?page=${page}&uid=${euid}&myuid=${uid}");
-        URLS.put("head", "http://img.nian.so/head/${uid}.jpg");
-        URLS.put("step", "http://img.nian.so/step/${image}");
+        URLS.put("dlike", "http://api.nian.so/multidream/${dreamid}/likes?page=${page}&uid=${uid}&shell=${shell}");
+        URLS.put("dfans", "http://api.nian.so/multidream/${dreamid}/followers?page=${page}&uid=${uid}&shell=${shell}");
 
         PROC.put("login", "login");
         PROC.put("info", "info?${uid}/${shell}/${euid}");
@@ -114,8 +101,6 @@ public class NianHttpUtil {
         PROC.put("like", "like?${uid}/${euid}/${stepid}/${page}");
         PROC.put("care", "care?${uid}/${euid}/${page}");
         PROC.put("fans", "fans?${uid}/${euid}/${page}");
-        PROC.put("head", "head?${uid}");
-        PROC.put("image", "image?${image}");
 
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(60000)
@@ -141,8 +126,8 @@ public class NianHttpUtil {
         // Increase default max connection per route
         apiConnectionManager.setDefaultMaxPerRoute(20);
         // Increase max connections for api.nian.so:80 to 50
-        HttpHost apihost = new HttpHost("api.nian.so", 80);
-        apiConnectionManager.setMaxPerRoute(new HttpRoute(apihost), 50);
+        apiConnectionManager.setMaxPerRoute(new HttpRoute(new HttpHost("nian.so", 80)), 40);
+        apiConnectionManager.setMaxPerRoute(new HttpRoute(new HttpHost("api.nian.so", 80)), 80);
         httpClient = HttpClients.custom()
                 .setConnectionManager(apiConnectionManager)
                 .setRetryHandler(apiRetryHandler)
@@ -150,7 +135,7 @@ public class NianHttpUtil {
 
     }
 
-    private static CloseableHttpClient geApitHttpClient() {
+    private static CloseableHttpClient getApitHttpClient() {
         return httpClient;
     }
 
@@ -261,7 +246,7 @@ public class NianHttpUtil {
             HttpResultEntity resultEntity = exec("get", url, null, null);
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取进展异评论常[%s,%d]：%s", stepid, page, e.getMessage()));
+            logger.error(String.format("[NIAN]获取进展评论异常[%s,%d]：%s", stepid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -277,7 +262,7 @@ public class NianHttpUtil {
             HttpResultEntity resultEntity = exec("get", url, null, null);
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取点赞异常[%s,%d]：%s", stepid, page, e.getMessage()));
+            logger.error(String.format("[NIAN]获取进展点赞异常[%s,%d]：%s", stepid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -293,7 +278,7 @@ public class NianHttpUtil {
             HttpResultEntity resultEntity = exec("get", url, null, null);
             return resultEntity;
         } catch (Exception e) {
-            logger.error(String.format("[NIAN]获取关注异常[%s,%d]：%s", euid, page, e.getMessage()));
+            logger.error(String.format("[NIAN]获取用户关注异常[%s,%d]：%s", euid, page, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         }
     }
@@ -314,8 +299,40 @@ public class NianHttpUtil {
         }
     }
 
+    public static HttpResultEntity dlike(String dreamid, int page) {
+        try {
+            String url = URLS.get("dlike");
+            Map<String, String> parameters = new HashMap<>();
+            parameters.putAll(LOGINFO);
+            parameters.put("dreamid", dreamid);
+            parameters.put("page", String.valueOf(page));
+            url = parser.parse(url, parameters);
+            HttpResultEntity resultEntity = exec("get", url, null, null);
+            return resultEntity;
+        } catch (Exception e) {
+            logger.error(String.format("[NIAN]获取记本点赞异常[%s,%d]：%s", dreamid, page, e.getMessage()));
+            return new HttpResultEntity(false, e.getMessage());
+        }
+    }
+
+    public static HttpResultEntity dfans(String dreamid, int page) {
+        try {
+            String url = URLS.get("dfans");
+            Map<String, String> parameters = new HashMap<>();
+            parameters.putAll(LOGINFO);
+            parameters.put("dreamid", dreamid);
+            parameters.put("page", String.valueOf(page));
+            url = parser.parse(url, parameters);
+            HttpResultEntity resultEntity = exec("get", url, null, null);
+            return resultEntity;
+        } catch (Exception e) {
+            logger.error(String.format("[NIAN]获取记本关注异常[%s,%d]：%s", dreamid, page, e.getMessage()));
+            return new HttpResultEntity(false, e.getMessage());
+        }
+    }
+
     public static HttpResultEntity exec(String method, String url, String body, Map<String, String> headers) {
-        CloseableHttpClient httpClient = geApitHttpClient();
+        CloseableHttpClient httpClient = getApitHttpClient();
         try {
             // 检查METHOD
             HttpUriRequest request = null;
@@ -346,9 +363,7 @@ public class NianHttpUtil {
         } catch (Exception e) {
             logger.error(String.format("HTTP请求异常：%s", e.getMessage()));
             throw new RuntimeException(e);
-            // return new HttpResultEntity(false, e.getMessage());
         } finally {
-            //NianHttpUtil.closeQuitely(httpClient);
         }
     }
 

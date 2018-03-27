@@ -22,6 +22,7 @@ public class JsonConverter {
 		this.objMapper.configure(Feature.ALLOW_NON_NUMERIC_NUMBERS, true);
 		this.objMapper.configure(Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 		this.objMapper.configure(Feature.ALLOW_NUMERIC_LEADING_ZEROS, true);
+		this.objMapper.configure(Feature.ALLOW_MISSING_VALUES, true);
 		this.typeFactory = TypeFactory.defaultInstance();
 	}
 

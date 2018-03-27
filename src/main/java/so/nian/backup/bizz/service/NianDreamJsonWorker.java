@@ -2,8 +2,6 @@ package so.nian.backup.bizz.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import so.nian.backup.config.AppConfig;
-import so.nian.backup.http.NianImageDownload;
 import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.StringUtil;
 import so.nian.backup.utils.jackson.JsonUtil;
@@ -11,7 +9,6 @@ import so.nian.backup.utils.jackson.JsonUtil;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.Map;
 
 public class NianDreamJsonWorker extends Thread {
@@ -32,30 +29,15 @@ public class NianDreamJsonWorker extends Thread {
     @Override
     public void run() {
         try {
-            String basepath = AppConfig.getNianCacheBase();
+            String basepath = NianJsonService.getCachePath(userid, "dream");
             // 开始生成记本内容
             logger.info(String.format("记本[%s(%s)]数据存储开始", dreamtitle, dreamid));
-            String fullname = StringUtil.generatePath(basepath, userid, dreamid + ".json");
+            String fullname = StringUtil.path(basepath, dreamid + ".json");
             File file = new File(fullname);
             FileUtil.createParentDirs(file);
 
-            String summaryfile = StringUtil.generatePath(basepath, userid, dreamid + "-info.json");
+            String summaryfile = StringUtil.path(basepath, dreamid + "-info.json");
             File summary = new File(summaryfile);
-
-
-            List<Map<String, Object>> steps = (List<Map<String, Object>>) dataModel.get("steps");
-            for (Map<String, Object> step : steps) {
-                List<Map<String, Object>> images = (List<Map<String, Object>>) step.get("images");
-                String firstimage = String.valueOf(step.get("image"));
-                if (images != null && images.size() > 0) {
-                    for (Map<String, Object> image : images) {
-                        NianImageDownload.download(userid, "step", String.valueOf(image.get("path")));
-                    }
-                } else {
-                    if (!StringUtil.isNullOrEmpty(firstimage))
-                        NianImageDownload.download(userid, "step", firstimage);
-                }
-            }
 
             if (summary.exists()) summary.delete();
             String sjson = JsonUtil.object2Json(dataModel.get("dream"));

@@ -24,6 +24,8 @@ public class AppConfig {
     private static final String nianViewsBase = "nian.views.base";
     private static final String nianImageBase = "nian.image.base";
     private static final String nianCacheBase = "nian.cache.base";
+    private static final String nianRenderModel = "nian.render.model";
+    private static final String nianRenderTemplate = "nian.render.template";
     private static final String freemarkerTemplatePath = "freemarker.template.path";
     private static final String freemarkerTemplateEncode = "freemarker.template.encode";
     private static final String applicationFontPath = "application.fontpath";
@@ -46,6 +48,8 @@ public class AppConfig {
             configMap.put(nianViewsBase, "念的视图根路径");
             configMap.put(nianImageBase, "念的图片根路径");
             configMap.put(nianCacheBase, "念数据缓存路径");
+            configMap.put(nianRenderModel, "念的数据渲染模式");
+            configMap.put(nianRenderTemplate, "念的数据渲染模板");
 
             configMap.put(freemarkerTemplatePath, "FreeMarker模板路径");
             configMap.put(freemarkerTemplateEncode, "FreeMarker模板编码");
@@ -135,6 +139,14 @@ public class AppConfig {
 
     public static String getNianCacheBase() {
         return config.get(nianCacheBase);
+    }
+
+    public static String getNianRenderModel() {
+        return config.get(nianRenderModel);
+    }
+
+    public static String getNianRenderTemplate() {
+        return config.get(nianRenderTemplate);
     }
 
     public static String getNianImageBase() {

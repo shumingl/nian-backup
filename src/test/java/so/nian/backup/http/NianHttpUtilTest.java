@@ -7,15 +7,14 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
 public class NianHttpUtilTest {
     LogConsole logger = LogConsole.getInstance();
 
     @Test
     public void login() throws Exception {
         //HttpResultEntity result = NianHttpUtil.login("1373521108@qq.com", "leaves89@163");
-        HttpResultEntity result = NianHttpUtil.login("1192858440@qq.com", "102385753");
+        //HttpResultEntity result = NianHttpUtil.login("1192858440@qq.com", "102385753");
+        HttpResultEntity result = NianHttpUtil.login("vic_jinghang@hotmail.com", "10.2385753");
         if (result.isSuccess()) {
             Map<String, Object> loginfo = result.getResponseMap();
             logger.info(String.format("登录成功：%s", loginfo.get("data")));
@@ -25,7 +24,8 @@ public class NianHttpUtilTest {
         } else
             logger.info("登录失败：" + result.getMessage());
     }
-    @Test
+
+    //@Test
     public void labTest() throws Exception {
         System.out.println(System.currentTimeMillis());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");

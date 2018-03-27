@@ -1,10 +1,22 @@
 package so.nian.backup.http;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import so.nian.backup.startup.NianBackupStartup;
 
 public class NianDownloadImageTest {
-    @Test
+    //@Before
+    public void before() throws Exception {
+        NianBackupStartup.startup();
+    }
+
+    //@After
+    public void after() throws Exception {
+        NianBackupStartup.shutdown();
+    }
+
+    //@Test
     public void downloadImage() throws Exception {
         NianBackupStartup.startup();
         NianImageDownload.downloadImage("imgtest", "cover", "142171_1484715118.jpg");
@@ -14,7 +26,7 @@ public class NianDownloadImageTest {
         NianBackupStartup.shutdown();
     }
 
-    @Test
+    //@Test
     public void downloadThumbs() throws Exception {
         NianBackupStartup.startup();
         NianImageDownload.downloadThumbs("imgtest", "cover", "142171_1484715118.jpg");
@@ -24,7 +36,7 @@ public class NianDownloadImageTest {
         NianBackupStartup.shutdown();
     }
 
-    @Test
+    //@Test
     public void download() throws Exception {
         NianBackupStartup.startup();
         //NianImageDownload.download("cover", "142171_1484715118.jpg");
@@ -36,7 +48,6 @@ public class NianDownloadImageTest {
         for (String image : images) {
             NianImageDownload.download("download", "step", image, true);
         }
-        NianImageDownload.shutdownPool();
         NianBackupStartup.shutdown();
     }
 

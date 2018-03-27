@@ -1,5 +1,7 @@
 package so.nian.backup.bizz.service;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +15,18 @@ import java.util.Map;
 public class NianHtmlServiceTest {
     private static final Logger logger = LoggerFactory.getLogger(NianHtmlServiceTest.class);
 
-    @Test
-    public void downloadByLoginUser() throws Exception {
+    //@Before
+    public void before() throws Exception {
         NianBackupStartup.startup();
+    }
+
+    //@After
+    public void after() throws Exception {
+        NianBackupStartup.shutdown();
+    }
+
+    //@Test
+    public void downloadByLoginUser() throws Exception {
         HttpResultEntity result = NianHttpUtil.login("1192858440@qq.com", "102385753");
         if (result.isSuccess()) {
             Map<String, Object> loginfo = result.getResponseMap();
@@ -25,12 +36,10 @@ public class NianHtmlServiceTest {
             return;
         }
         NianHtmlService.downloadForUsers("102220");
-        NianBackupStartup.shutdown();
     }
 
-    @Test
+    //@Test
     public void downloadByElseUsers() throws Exception {
-        NianBackupStartup.startup();
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
@@ -41,12 +50,10 @@ public class NianHtmlServiceTest {
         NianHttpUtil.LOGINFO.put("shell", "41477424d85ca604d15b6eb72d635206");
         NianHtmlService.downloadForUsers("102220");
         */
-        NianBackupStartup.shutdown();
     }
 
-    @Test
+    //@Test
     public void downloadForUsers() throws Exception {
-        NianBackupStartup.startup();
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
@@ -94,12 +101,10 @@ public class NianHtmlServiceTest {
                 "31305"//董东栋
         );
         / /*/
-        NianBackupStartup.shutdown();
     }
 
-    @Test
+    //@Test
     public void downloadDream() throws Exception {
-        NianBackupStartup.startup();
         NianHttpUtil.LOGINFO.put("uid", "142171");
         NianHttpUtil.LOGINFO.put("name", "罗生_");
         NianHttpUtil.LOGINFO.put("shell", "077682926c004802b79883b94428a827");
@@ -113,10 +118,6 @@ public class NianHtmlServiceTest {
         //NianHtmlService.downloadDream(null, "70279");//光景
         //NianHtmlService.downloadDream(null, "2678095");//地獄之犬
         //NianHtmlService.downloadDream(null, "4003655");//時至沙境
-        NianJsonService.shutdownPool();
-        NianHtmlService.shutdownPool();
-        NianImageDownload.shutdownPool();
-        NianBackupStartup.shutdown();
     }
 
 }

@@ -1,10 +1,13 @@
 package so.nian.backup.http;
 
+import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.bizz.service.NamedThreadFactory;
@@ -35,7 +38,7 @@ public class NianImageDownload {
     private static final int MAX_RETRY = 10;
     private static CloseableHttpClient httpClient;
 
-    static {
+    public static void startup() {
 
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(60000)
@@ -43,11 +46,19 @@ public class NianImageDownload {
                 .setSocketTimeout(1800000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-        imageThreadPool = new ThreadPoolExecutor(32, 64, 0L, TimeUnit.MILLISECONDS,
+        imageThreadPool = new ThreadPoolExecutor(120, 200, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new NamedThreadFactory("IMGS"));
-        httpClient = HttpClients.createDefault();
+
+        PoolingHttpClientConnectionManager imageConnectionManager = new PoolingHttpClientConnectionManager();
+        imageConnectionManager.setMaxTotal(512);
+        imageConnectionManager.setDefaultMaxPerRoute(20);
+        imageConnectionManager.setMaxPerRoute(new HttpRoute(new HttpHost("img.nian.so", 80)), 100);
+        httpClient = HttpClients.custom()
+                .setConnectionManager(imageConnectionManager)
+                .build();
         failedImages = new ConcurrentHashMap<>();
     }
+
 
     public static synchronized boolean recordFailedImage(String imageinfo) {
         if (failedImages.containsKey(imageinfo)) {
@@ -124,7 +135,7 @@ public class NianImageDownload {
 
         try {
             String backupbase = AppConfig.getNianViewsBase();
-            String imagepath = StringUtil.generatePath(backupbase, userid, "images", type, image);
+            String imagepath = StringUtil.path(backupbase, userid, "images", type, image);
             File imagefile = new File(imagepath);
             FileUtil.createParentDirs(imagefile);
             String key = String.format("%s/%s", type, image);
@@ -182,9 +193,10 @@ public class NianImageDownload {
     public static void download(String userid, String type, String image, boolean iscover) {
         /*downloadFromLocal(userid, type, image, iscover);*/
         String backupbase = AppConfig.getNianViewsBase();
-        String imagepath = StringUtil.generatePath(backupbase, userid, "images", type, image);
-        File imagefile = new File(imagepath);
-        if (iscover || !imagefile.exists() || imagefile.length() == 0) {
+        File imagefile = new File(StringUtil.path(backupbase, userid, "images", type, image));
+        File thumbsfile = new File(StringUtil.path(backupbase, userid, "images/thumbs", image));
+        if (iscover || !imagefile.exists() || imagefile.length() == 0
+                || !thumbsfile.exists() || thumbsfile.length() == 0) {
             imageThreadPool.execute(new NianImageDownloadWorker(userid, type, image, iscover));
         }
     }
@@ -195,7 +207,7 @@ public class NianImageDownload {
                 return new HttpResultEntity(true, "IMAGE参数为空，跳过下载。");
             }
             String backupbase = AppConfig.getNianViewsBase();
-            String imagepath = StringUtil.generatePath(backupbase, userid, "images", type, image);
+            String imagepath = StringUtil.path(backupbase, userid, "images", type, image);
             File imagefile = new File(imagepath);
             FileUtil.createParentDirs(imagefile);
 
@@ -233,7 +245,7 @@ public class NianImageDownload {
                 return new HttpResultEntity(true, "IMAGE参数为空，跳过下载。");
             }
             String backupbase = AppConfig.getNianViewsBase();
-            String imagepath = StringUtil.generatePath(backupbase, userid, "images/thumbs", image);
+            String imagepath = StringUtil.path(backupbase, userid, "images/thumbs", image);
             File imagefile = new File(imagepath);
             FileUtil.createParentDirs(imagefile);
 

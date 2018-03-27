@@ -30,11 +30,11 @@ public class NianDreamHtmlWorker extends Thread {
     @Override
     public void run() {
         try {
-            String tplname = "dream.ftl";
+            String tplname = AppConfig.getNianRenderTemplate();
             String basepath = AppConfig.getNianViewsBase();
             // 开始生成记本内容
             logger.info(String.format("记本[%s(%s)]生成网页开始", dreamtitle, dreamid));
-            File file = new File(StringUtil.generatePath(basepath, userid, dreamid + ".html"));
+            File file = new File(StringUtil.path(basepath, userid, dreamid + ".html"));
             FileUtil.createParentDirs(file);
             if (file.exists()) file.delete();
             ReportTemplateFactory templateFactory = ContextUtil.getBean("templateFactory");
