@@ -301,18 +301,11 @@ public class NianJsonService {
      * @return
      */
     public static Map<String, Object> downloadFromLocal(String userid, String dreamid) {
-        String dreambase = NianJsonService.getCachePath(userid, "dream");
-        String dreampath = StringUtil.path(dreambase, dreamid + ".json");
-        File dreamfile = new File(dreampath);
         Map<String, Object> data = null;
-        if (dreamfile.exists()) {
-            try {
-                byte[] bytes = Files.readAllBytes(Paths.get(dreampath));
-                String dreamjson = new String(bytes, "UTF-8");
-                data = JsonUtil.json2Map(dreamjson);
-            } catch (Exception e) {
-                logger.error(String.format("[%s/%s]读解析记本数据[%s]错误：%s", userid, dreamid, dreampath, e.getMessage()));
-            }
+        try {
+            data = NianJsonService.takeoutCache(userid, dreamid, "dream");
+        } catch (Exception e) {
+            logger.error(String.format("[%s/%s]读解析本地记本数据错误：%s", userid, dreamid, e.getMessage()));
         }
         return data;
     }
@@ -776,6 +769,7 @@ public class NianJsonService {
             return null;
         byte[] bytes = Files.readAllBytes(Paths.get(filename));
         String json = new String(bytes, "UTF-8");
+        json = json.replace("<", "&lt;").replace(">", "&gt;").replace("&lt;br&gt;", "<br>");
         Map<String, Object> cache = JsonUtil.json2Map(json);
         return cache;
     }

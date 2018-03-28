@@ -90,10 +90,10 @@ public class HttpResultEntity {
         if (responseBody != null) {
             this.responseBody = responseBody
                     .replace("&amp;", "&")
-                    .replace("&quot;", "\\\"")
-                    .replace("&nbsp;", " ")
-                    .replace("&lt;", "<")
-                    .replace("&gt;", ">");
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("&lt;br&gt;", "<br>");
+            //.replace("&quot;", "\\\"").replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">")
             responseMap = JsonUtil.json2Map(this.responseBody);
         }
     }

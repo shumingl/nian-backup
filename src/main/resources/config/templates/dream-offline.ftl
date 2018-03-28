@@ -103,6 +103,9 @@
             font-family: Consolas, '宋体', serif;
             font-size: 10pt;
             color : #161616;
+            white-space: pre-wrap;
+            -ms-word-wrap: break-word;
+            word-wrap: break-word;
         }
         .nian_commentline {
             width: 60%;
@@ -194,7 +197,7 @@
         </#if>
         <!--这里需要读取点赞的人-->
     </div>
-    <#if step?index % 100 == 0><#flush /></#if>
+    <#if step?index % 250 == 0><#flush /></#if>
     </#list>
     </#if>
 </div>
