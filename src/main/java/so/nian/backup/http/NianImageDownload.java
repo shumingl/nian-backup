@@ -64,7 +64,7 @@ public class NianImageDownload {
         return false;
     };
 
-    public static void startup() {
+    public static void startup(int imageSize) {
 
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(30000)
@@ -72,7 +72,7 @@ public class NianImageDownload {
                 //.setSocketTimeout(300000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
-        imageThreadPool = new ThreadPoolExecutor(80, 200, 0L, TimeUnit.MILLISECONDS,
+        imageThreadPool = new ThreadPoolExecutor(imageSize, imageSize * 2, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(), new NamedThreadFactory("IMGS"));
 
         PoolingHttpClientConnectionManager imageConnectionManager = new PoolingHttpClientConnectionManager();

@@ -9,7 +9,7 @@ public class NamedThreadFactory implements ThreadFactory {
     private String prefix;
 
     public NamedThreadFactory(String prefix) {
-        this.prefix = String.format("[%s]P%03d/T", prefix, poolidx.getAndIncrement());
+        this.prefix = String.format("%s/P%03d/T", prefix, poolidx.getAndIncrement());
     }
 
     @Override

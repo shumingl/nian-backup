@@ -27,11 +27,11 @@ public class NianJsonService {
     private static ThreadPoolExecutor jsonThreadPool;
     private static final ExpressionParser parser = ExpressionParser.getDefault();
 
-    public static void startup() {
-        httpThreadPool = new ThreadPoolExecutor(80, 100, 0L,
+    public static void startup(int httpSize, int jsonSize) {
+        httpThreadPool = new ThreadPoolExecutor(httpSize, httpSize * 2, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
                 new NamedThreadFactory("HTTP"));
-        jsonThreadPool = new ThreadPoolExecutor(8, 32, 0L,
+        jsonThreadPool = new ThreadPoolExecutor(jsonSize, jsonSize * 2, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
                 new NamedThreadFactory("JSON"));
     }
@@ -156,7 +156,7 @@ public class NianJsonService {
         // 下载用户信息
         Map<String, Object> userdata = NianJsonService.downloadUserInfo(userid);
         if (userdata != null) {
-            String username = String.valueOf(StringUtil.mget(userdata, "user/name"));
+            String username = StringUtil.MAPGET(userdata, "user/name");
             // 下载用户的记本
             downloadDreams(username, userid);
         }
@@ -212,7 +212,7 @@ public class NianJsonService {
             Map<String, Object> dataModel = NianJsonService.downloadAllSteps(userid, dreamid);
             if (userid == null) {
                 if (dataModel != null) {
-                    userid = String.valueOf(StringUtil.mget(dataModel, "dream/uid"));
+                    userid = StringUtil.MAPGET(dataModel, "dream/uid");
                     if (userid == null)
                         throw new RuntimeException("generateDreamJson(): 用户USERID为空");
                 } else {
@@ -225,7 +225,7 @@ public class NianJsonService {
 
             String model = AppConfig.getNianRenderModel();
             if ("online".equals(model)) { // ONLINE模式生成记本内容
-                String dreamtitle = String.valueOf(StringUtil.mget(dataModel, "dream/title"));
+                String dreamtitle = StringUtil.MAPGET(dataModel, "dream/title");
                 jsonThreadPool.execute(new NianDreamJsonWorker(userid, dreamtitle, dreamid, dataModel));
             }
         } catch (Exception e) {
@@ -282,7 +282,7 @@ public class NianJsonService {
         if (entity.isSuccess()) {
             data = (Map<String, Object>) entity.getResponseMap().get("data");
             if (data != null) {
-                String dreamtitle = String.valueOf(StringUtil.mget(data, "dream/title"));
+                String dreamtitle = StringUtil.MAPGET(data, "dream/title");
                 logger.info(String.format("记本[%s(%s)]首页下载成功", dreamtitle, dreamid));
             }
         } else {
@@ -343,6 +343,7 @@ public class NianJsonService {
                     userinfo.put("fans", fans);
                     String cachebase = NianJsonService.getCachePath(userid, "cache");
                     String userpath = StringUtil.path(cachebase, "user.json");
+                    FileUtil.createParentDirs(new File(userpath));
                     String json = JsonUtil.object2Json(userinfo);
                     Files.write(Paths.get(userpath), json.getBytes("UTF-8"));
                 }

@@ -18,11 +18,11 @@ public class NianHtmlService {
     private static ThreadPoolExecutor htmlThreadPool;
     private static ThreadPoolExecutor httpThreadPool;
 
-    public static void startup() {
+    public static void startup(int httpSize, int htmlSize) {
 
-        htmlThreadPool = new ThreadPoolExecutor(20, 64, 0L,
+        htmlThreadPool = new ThreadPoolExecutor(htmlSize, htmlSize * 2, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTML"));
-        httpThreadPool = new ThreadPoolExecutor(40, 64, 0L,
+        httpThreadPool = new ThreadPoolExecutor(httpSize, httpSize * 2, 0L,
                 TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("HTTP"));
     }
 
@@ -102,7 +102,7 @@ public class NianHtmlService {
 
     }
 
-    private static void downloadForUser(String userid) throws IOException {
+    public static void downloadForUser(String userid) throws IOException {
 
         // 创建用户目录
         createUserDirs(userid);
@@ -147,7 +147,7 @@ public class NianHtmlService {
 
             if (userid == null) {
                 if (dataModel != null) {
-                    userid = String.valueOf(StringUtil.mget(dataModel, "dream/uid"));
+                    userid = StringUtil.MAPGET(dataModel, "dream/uid");
                     if (userid == null)
                         throw new RuntimeException("generateDreamHtml(): 用户USERID为空");
                 } else {
@@ -157,7 +157,7 @@ public class NianHtmlService {
             } else {
                 createUserDirs(userid);
             }
-            String dreamtitle = String.valueOf(StringUtil.mget(dataModel, "dream/title"));
+            String dreamtitle = StringUtil.MAPGET(dataModel, "dream/title");
             NianJsonService.getJsonThreadPool().execute(new NianDreamJsonWorker(userid, dreamtitle, dreamid, dataModel));
             // 开始生成记本内容
             htmlThreadPool.execute(new NianDreamHtmlWorker(userid, dreamtitle, dreamid, dataModel));

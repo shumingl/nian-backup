@@ -18,11 +18,11 @@ public class ThreadPoolMonitorThread extends Thread {
     public ThreadPoolMonitorThread() {
         pools = new LinkedHashMap<>();
         stop = false;
-        pools.put("JSON .HTTP", NianJsonService.getHttpThreadPool());
-        pools.put("JSON .JSON", NianJsonService.getJsonThreadPool());
-        pools.put("HTML .HTTP", NianHtmlService.getHttpThreadPool());
-        pools.put("HTML .HTML", NianHtmlService.getHtmlThreadPool());
-        pools.put("IMAGE.HTTP", NianImageDownload.getImageThreadPool());
+        pools.put("JSON.HTTP", NianJsonService.getHttpThreadPool());
+        pools.put("JSON.JSON", NianJsonService.getJsonThreadPool());
+        pools.put("HTML.HTTP", NianHtmlService.getHttpThreadPool());
+        pools.put("HTML.HTML", NianHtmlService.getHtmlThreadPool());
+        pools.put("IMGS.HTTP", NianImageDownload.getImageThreadPool());
     }
 
     public void shutdown() {
@@ -35,7 +35,7 @@ public class ThreadPoolMonitorThread extends Thread {
             while (!stop) {
                 for (String key : pools.keySet()) {
                     ThreadPoolExecutor pool = pools.get(key);
-                    logger.info(String.format("ThreadPool[%-10s] : RUNNING(%d), STATUS(%d/%d), QUEUE(%d)",
+                    logger.info(String.format("ThreadPool[%s] : RUNNING(%d), STATUS(%d/%d), QUEUE(%d)",
                             key,
                             pool.getActiveCount(),
                             pool.getCompletedTaskCount(),

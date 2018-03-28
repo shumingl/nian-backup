@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="false">
-    <property name="logTextPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{0}[%L] - %msg%n"/>
+    <property name="logTextPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{0}[%L] - [%thread]%msg%n"/>
     <property name="logFileBase" value="${logback.logbasepath}"/>
     <property name="logFileName" value="nian-backup"/>
 

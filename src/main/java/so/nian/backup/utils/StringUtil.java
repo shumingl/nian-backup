@@ -452,6 +452,10 @@ public class StringUtil {
 
     }
 
+    public static <T> T MAPGET(Map<String, Object> map, String path) {
+        return (T) mget(map, path);
+    }
+
     public static Object mget(Map<?, ?> data, String path) {
         if (data == null) return null;
         if (StringUtil.isNullOrEmpty(path)) return data;

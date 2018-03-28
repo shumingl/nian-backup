@@ -5,11 +5,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import so.nian.backup.http.HttpResultEntity;
 import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.http.NianImageDownload;
 import so.nian.backup.startup.NianBackupStartup;
+import so.nian.backup.utils.StringUtil;
+import so.nian.backup.utils.jackson.JsonUtil;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 public class NianHtmlServiceTest {
@@ -17,7 +23,14 @@ public class NianHtmlServiceTest {
 
     //@Before
     public void before() throws Exception {
-        NianBackupStartup.startup();
+        ClassPathResource resource = new ClassPathResource("config/export.json");
+        File file = resource.getFile();
+        byte[] bytes = Files.readAllBytes(Paths.get(file.getCanonicalPath()));
+        String json = new String(bytes, "UTF-8");
+        Map<String, Object> export = JsonUtil.json2Map(json);
+
+        Map<String, Object> crawlers = StringUtil.MAPGET(export, "crawlers");
+        NianBackupStartup.startup(crawlers);
     }
 
     //@After

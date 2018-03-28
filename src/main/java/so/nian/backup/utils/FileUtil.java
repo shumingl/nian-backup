@@ -8,8 +8,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class FileUtil {
 
@@ -32,7 +34,8 @@ public class FileUtil {
             fostream.flush();
             fostream.close();
             // 先写dump文件，再移动
-            Files.move(Paths.get(imageDumpFile.getCanonicalPath()), Paths.get(file.getCanonicalPath()));
+            CopyOption[] options = new CopyOption[]{StandardCopyOption.REPLACE_EXISTING};
+            Files.move(Paths.get(imageDumpFile.getCanonicalPath()), Paths.get(file.getCanonicalPath()), options);
         } catch (Exception e) {
             logger.error("[save2image]写入文件[{}]失败：{}", file.getCanonicalPath(), e.getMessage());
         }
