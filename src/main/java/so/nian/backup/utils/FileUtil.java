@@ -23,10 +23,11 @@ public class FileUtil {
         File imageDumpFile = new File(imageBase, file.getName());
         createParentDirs(file);
         createParentDirs(imageDumpFile);
+        FileOutputStream fostream = null;
         try {
-            FileOutputStream fostream = new FileOutputStream(imageDumpFile);
+            fostream = new FileOutputStream(imageDumpFile);
             int ret;
-            byte[] buffer = new byte[819200];
+            byte[] buffer = new byte[102400];
             while ((ret = istream.read(buffer)) != -1) {
                 if (ret > 0)
                     fostream.write(buffer, 0, ret);
@@ -38,6 +39,10 @@ public class FileUtil {
             Files.move(Paths.get(imageDumpFile.getCanonicalPath()), Paths.get(file.getCanonicalPath()), options);
         } catch (Exception e) {
             logger.error("[save2image]写入文件[{}]失败：{}", file.getCanonicalPath(), e.getMessage());
+        } finally {
+            if (fostream != null) {
+                fostream.close();
+            }
         }
     }
 

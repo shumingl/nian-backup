@@ -369,6 +369,12 @@ public class NianJsonService {
      */
     public static Map<String, Object> downloadUserDreams(String userid) {
 
+        Map<String, Object> dreamsCache = null;
+        try {
+            dreamsCache = NianJsonService.takeoutCache(userid, null, "list");
+        } catch (IOException e) {
+            logger.error("获取本地记本缓存[{}/dreams.json]错误：{}", userid, e.getMessage());
+        }
         String model = AppConfig.getNianRenderModel();
         Map<String, Object> data = null;
         if ("online".equals(model)) {
@@ -376,32 +382,44 @@ public class NianJsonService {
             if (entity != null && entity.isSuccess()) {
                 data = (Map<String, Object>) entity.getResponseMap().get("data");
 
+                //使用新数据覆盖掉缓存旧数据
+                if (dreamsCache != null && dreamsCache.containsKey("dreams")) {
+                    List<Map<String, Object>> cachelist = (List<Map<String, Object>>) dreamsCache.get("dreams");
+                    if (cachelist != null && cachelist.size() > 0) {
+                        if (data != null && data.containsKey("dreams")) {
+                            List<Map<String, Object>> datalist = (List<Map<String, Object>>) data.get("dreams");
+                            if (cachelist != null && cachelist.size() > 0) {
+                                for (int cacheidx = 0; cacheidx < cachelist.size(); cacheidx++) {
+                                    String cacheDreamId = (String) cachelist.get(cacheidx).get("id");
+                                    for (int dataidx = 0; dataidx < datalist.size(); dataidx++) {
+                                        String dataDreamId = (String) datalist.get(dataidx).get("id");
+                                        if (cacheDreamId.equals(dataDreamId)) {
+                                            cachelist.get(cacheidx).putAll(datalist.get(dataidx));
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 String basepath = NianJsonService.getCachePath(userid, "cache");
                 String fullname = StringUtil.path(basepath, "dreams.json");
                 FileUtil.createParentDirs(new File(fullname));
 
                 // 保存记本列表信息
-                String datajson = JsonUtil.object2Json(data);
-                if (datajson != null)
+                String datajson = JsonUtil.object2Json(dreamsCache);
+                if (datajson != null) {
                     try {
                         Files.write(Paths.get(fullname), datajson.getBytes("UTF-8"));
                     } catch (IOException e) {
                         logger.error("写入本地记本列表[{}/dreams.json]错误：{}", userid, e.getMessage());
                     }
-            }
-        } else if ("offline".equals(model)) {
-            String cachebase = NianJsonService.getCachePath(userid, "cache");
-            String dreamspath = StringUtil.path(cachebase, "dreams.json");
-            File dreamsfile = new File(dreamspath);
-            if (dreamsfile.exists()) {
-                try {
-                    byte[] bytes = Files.readAllBytes(Paths.get(dreamspath));
-                    String dreamsjson = new String(bytes, "UTF-8");
-                    data = JsonUtil.json2Map(dreamsjson);
-                } catch (IOException e) {
-                    logger.error("获取本地记本列表[{}/dreams.json]错误：{}", userid, e.getMessage());
                 }
             }
+        } else if ("offline".equals(model)) {
+            data = dreamsCache;
         } else
             throw new RuntimeException("[downloadUserDreams]参数错误：nian.render.model[online/offline]");
         if (data != null) {
@@ -769,7 +787,7 @@ public class NianJsonService {
             return null;
         byte[] bytes = Files.readAllBytes(Paths.get(filename));
         String json = new String(bytes, "UTF-8");
-        json = json.replace("<", "&lt;").replace(">", "&gt;").replace("&lt;br&gt;", "<br>");
+        json = json.replace("<", "&lt;").replace(">", "&gt;").replace("&lt;br&gt;", "\\n");
         Map<String, Object> cache = JsonUtil.json2Map(json);
         return cache;
     }

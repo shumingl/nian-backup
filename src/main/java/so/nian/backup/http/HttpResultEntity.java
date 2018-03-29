@@ -92,7 +92,7 @@ public class HttpResultEntity {
                     .replace("&amp;", "&")
                     .replace("<", "&lt;")
                     .replace(">", "&gt;")
-                    .replace("&lt;br&gt;", "<br>");
+                    .replace("&lt;br&gt;", "\\n");
             //.replace("&quot;", "\\\"").replace("&nbsp;", " ").replace("&lt;", "<").replace("&gt;", ">")
             responseMap = JsonUtil.json2Map(this.responseBody);
         }

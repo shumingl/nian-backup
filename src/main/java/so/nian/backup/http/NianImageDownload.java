@@ -229,6 +229,7 @@ public class NianImageDownload {
     }
 
     public static HttpResultEntity downloadImage(String userid, String type, String image, boolean iscover) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
             if (StringUtil.isNullOrEmpty(image)) {
                 return new HttpResultEntity(true, "IMAGE参数为空，跳过下载。");
@@ -262,11 +263,12 @@ public class NianImageDownload {
             logger.error(String.format("图片下载异常[%s/images/%s/%s]：%s", userid, type, image, e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
-            //NianHttpUtil.closeQuitely(httpClient);
+            NianHttpUtil.closeQuitely(httpClient);
         }
     }
 
     public static HttpResultEntity downloadThumbs(String userid, String type, String image, boolean iscover) {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
         try {
 
             if (StringUtil.isNullOrEmpty(image)) {
@@ -308,7 +310,7 @@ public class NianImageDownload {
                     userid, type, image, e.getClass().getCanonicalName(), e.getMessage()));
             return new HttpResultEntity(false, e.getMessage());
         } finally {
-            //NianHttpUtil.closeQuitely(httpClient);
+            NianHttpUtil.closeQuitely(httpClient);
         }
     }
 
