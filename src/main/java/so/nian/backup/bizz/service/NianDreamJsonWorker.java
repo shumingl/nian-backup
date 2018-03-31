@@ -37,14 +37,11 @@ public class NianDreamJsonWorker extends Thread {
             FileUtil.createParentDirs(file);
 
             String summaryfile = StringUtil.path(basepath, dreamid + "-info.json");
-            File summary = new File(summaryfile);
 
-            if (summary.exists()) summary.delete();
             String sjson = JsonUtil.object2Json(dataModel.get("dream"));
             byte[] sbytes = sjson.getBytes("UTF-8");
             Files.write(Paths.get(summaryfile), sbytes);
 
-            if (file.exists()) file.delete();
             String json = JsonUtil.object2Json(dataModel);
             byte[] bytes = json.getBytes("UTF-8");
             Files.write(Paths.get(fullname), bytes);

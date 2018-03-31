@@ -48,7 +48,7 @@ public class NianHttpUtil {
         if (exception instanceof InterruptedIOException) return false;
         if (exception instanceof UnknownHostException) return false;
         if (exception instanceof ConnectTimeoutException) return false;
-        if (exception instanceof SSLException)  return false;
+        if (exception instanceof SSLException) return false;
 
         HttpClientContext clientContext = HttpClientContext.adapt(context);
         HttpRequest request = clientContext.getRequest();
@@ -183,7 +183,11 @@ public class NianHttpUtil {
             parameters.putAll(LOGINFO);
             parameters.put("euid", euid);
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取个人信息异常：%s", e.getMessage()));
@@ -198,7 +202,11 @@ public class NianHttpUtil {
             parameters.putAll(LOGINFO);
             parameters.put("euid", euid);
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取记本列表异常[%s]：%s", euid, e.getMessage()));
@@ -214,7 +222,11 @@ public class NianHttpUtil {
             parameters.put("dreamid", dreamid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取记本进展异常[%s,%d]：%s", dreamid, page, e.getMessage()));
@@ -230,7 +242,11 @@ public class NianHttpUtil {
             parameters.put("stepid", stepid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取进展评论异常[%s,%d]：%s", stepid, page, e.getMessage()));
@@ -246,7 +262,11 @@ public class NianHttpUtil {
             parameters.put("stepid", stepid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取进展点赞异常[%s,%d]：%s", stepid, page, e.getMessage()));
@@ -262,7 +282,11 @@ public class NianHttpUtil {
             parameters.put("euid", euid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取用户关注异常[%s,%d]：%s", euid, page, e.getMessage()));
@@ -278,7 +302,11 @@ public class NianHttpUtil {
             parameters.put("euid", euid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取听众异常[%s,%d]：%s", euid, page, e.getMessage()));
@@ -294,7 +322,11 @@ public class NianHttpUtil {
             parameters.put("dreamid", dreamid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取记本点赞异常[%s,%d]：%s", dreamid, page, e.getMessage()));
@@ -310,7 +342,11 @@ public class NianHttpUtil {
             parameters.put("dreamid", dreamid);
             parameters.put("page", String.valueOf(page));
             url = parser.parse(url, parameters);
-            HttpResultEntity resultEntity = exec("get", url, null, null);
+            HttpResultEntity resultEntity = new HttpResultEntity(false, "开始下载");
+            while (!resultEntity.isSuccess()) {
+                logger.info(String.format("GET [%s]: %s", url, resultEntity.getMessage()));
+                resultEntity = exec("get", url, null, null);
+            }
             return resultEntity;
         } catch (Exception e) {
             logger.error(String.format("[NIAN]获取记本关注异常[%s,%d]：%s", dreamid, page, e.getMessage()));

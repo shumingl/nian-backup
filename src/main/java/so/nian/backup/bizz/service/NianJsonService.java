@@ -180,8 +180,8 @@ public class NianJsonService {
             for (Map<String, Object> dream : dreams) {
                 // 下载图片
                 String image = String.valueOf(dream.get("image"));
-                if (!StringUtil.isNullOrEmpty(image))
-                    NianImageDownload.download(userid, "dream", image);
+                /*if (!StringUtil.isNullOrEmpty(image))
+                    NianImageDownload.download(userid, "dream", image);*/
                 // 下载记本
                 downloadDream(userid, String.valueOf(dream.get("id")));
             }
@@ -324,16 +324,19 @@ public class NianJsonService {
         String model = AppConfig.getNianRenderModel();
         Map<String, Object> data = null;
         if ("online".equals(model)) {
+            logger.info("下载用户信息[{}]", userid);
             HttpResultEntity info = NianHttpUtil.info(userid);
             if (info != null && info.isSuccess()) {
                 data = (Map<String, Object>) info.getResponseMap().get("data");
                 Map<String, Object> userinfo = (Map<String, Object>) data.get("user");
                 if (userinfo != null && userinfo.get("uid") != null) { //有些不存在的UserID下载的数据uid是null
                     // 下载用户关注和粉丝
+                    /*logger.info("下载用户关注[{}]", userid);
                     List<Map<String, Object>> care = downloadUserCareOrFans(userid, "care");
+                    logger.info("下载用户粉丝[{}]", userid);
                     List<Map<String, Object>> fans = downloadUserCareOrFans(userid, "fans");
                     userinfo.put("care", care);
-                    userinfo.put("fans", fans);
+                    userinfo.put("fans", fans);*/
                     String cachebase = NianJsonService.getCachePath(userid, "cache");
                     String userpath = StringUtil.path(cachebase, "user.json");
                     FileUtil.createParentDirs(new File(userpath));
@@ -381,28 +384,9 @@ public class NianJsonService {
             HttpResultEntity entity = NianHttpUtil.dreams(userid);
             if (entity != null && entity.isSuccess()) {
                 data = (Map<String, Object>) entity.getResponseMap().get("data");
-
                 //使用新数据覆盖掉缓存旧数据
-                if (dreamsCache != null && dreamsCache.containsKey("dreams")) {
-                    List<Map<String, Object>> cachelist = (List<Map<String, Object>>) dreamsCache.get("dreams");
-                    if (cachelist != null && cachelist.size() > 0) {
-                        if (data != null && data.containsKey("dreams")) {
-                            List<Map<String, Object>> datalist = (List<Map<String, Object>>) data.get("dreams");
-                            if (cachelist != null && cachelist.size() > 0) {
-                                for (int cacheidx = 0; cacheidx < cachelist.size(); cacheidx++) {
-                                    String cacheDreamId = (String) cachelist.get(cacheidx).get("id");
-                                    for (int dataidx = 0; dataidx < datalist.size(); dataidx++) {
-                                        String dataDreamId = (String) datalist.get(dataidx).get("id");
-                                        if (cacheDreamId.equals(dataDreamId)) {
-                                            cachelist.get(cacheidx).putAll(datalist.get(dataidx));
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                if (dreamsCache != null && data != null)
+                    NianJsonService.mergeDataMap((List<Map<String, Object>>) dreamsCache.get("dreams"), (List<Map<String, Object>>) data.get("dreams"), "${id}");
 
                 String basepath = NianJsonService.getCachePath(userid, "cache");
                 String fullname = StringUtil.path(basepath, "dreams.json");
@@ -418,6 +402,8 @@ public class NianJsonService {
                     }
                 }
             }
+            if (dreamsCache != null)
+                data = dreamsCache;
         } else if ("offline".equals(model)) {
             data = dreamsCache;
         } else
@@ -426,7 +412,8 @@ public class NianJsonService {
             List<Map<String, Object>> dreams = (List<Map<String, Object>>) data.get("dreams");
             if (dreams != null) {
                 for (Map<String, Object> dream : dreams) {
-                    NianImageDownload.download(userid, "dream", String.valueOf(dream.get("image")));
+                    if (!StringUtil.isNullOrEmpty(dream.get("image")))
+                        NianImageDownload.download(userid, "dream", String.valueOf(dream.get("image")));
                 }
             }
         }
@@ -501,6 +488,18 @@ public class NianJsonService {
         }
     }
 
+    public static boolean stepIsSame(Map<String, Object> left, Map<String, Object> right) {
+        if (left == null || right == null) return false;
+        List<Map<String, Object>> leftCmts = (List<Map<String, Object>>) left.get("stepcomments");
+        List<Map<String, Object>> rightCmts = (List<Map<String, Object>>) right.get("stepcomments");
+        int leftCCnt = leftCmts == null ? 0 : leftCmts.size();
+        int rightCCnt = rightCmts == null ? 0 : rightCmts.size();
+        String tpl = "${lastdate}/${comments}/${likes}/${content}";
+        String leftval = parser.parse(tpl, left) + "/" + leftCCnt;
+        String rightval = parser.parse(tpl, right) + "/" + rightCCnt;
+        return leftval.equals(rightval);
+    }
+
     public static boolean checkStepPageUpdate(Map<String, String> cacheIndex, List<Map<String, Object>> stepList) {
         // 检查数据是否有变动
         boolean hasChanged = false;
@@ -530,19 +529,24 @@ public class NianJsonService {
         try {
 
             Map<String, Object> dataModel = new HashMap<>();
-            List<Map<String, Object>> steps = new ArrayList<>();
+            Map<String, Map<String, Object>> stepMap = new HashMap<>();
 
             // 本地缓存
-            Map<String, String> cacheIndex = null;
+            Map<String, String> compareIndex = null;
+            Map<String, Map<String, Object>> cacheIndex = null;
             Map<String, Object> dreamCache = NianJsonService.takeoutCache(userid, dreamid, "dream");
             List<Map<String, Object>> cacheSteps = null;
+            compareIndex = new LinkedHashMap<>();
+            cacheIndex = new LinkedHashMap<>();
             if (dreamCache != null) {
-                cacheIndex = new LinkedHashMap<>();
                 cacheSteps = (List<Map<String, Object>>) dreamCache.get("steps");
+                int num = 0;
                 for (Map<String, Object> step : cacheSteps) {
                     String stepId = (String) step.get("sid");
                     String val = parser.parse("${lastdate}/${comments}/${likes}", step);
-                    cacheIndex.put(stepId, val);
+                    compareIndex.put(stepId, val);
+                    cacheIndex.put(stepId, step);//将缓存的数据，List转换成Map，用于合并数据
+                    num++;
                 }
             }
 
@@ -552,10 +556,12 @@ public class NianJsonService {
             int finished = 0;
             int page = 1;
             while (true) {
+                // 调用API下载某一页的进展数据
                 HttpResultEntity entity = NianHttpUtil.steps(dreamid, page);
                 if (entity.isSuccess()) {
                     Map<String, Object> data = (Map<String, Object>) entity.getResponseMap().get("data");
                     if (data != null) {
+                        // 从第一页数据中获取所需要的信息
                         if (page == 1) {
                             dataModel.putAll(data);
                             Map<String, Object> dream = (Map<String, Object>) data.get("dream");
@@ -565,47 +571,23 @@ public class NianJsonService {
                             steptotal = Integer.valueOf(String.valueOf(dream.get("step")));
                             logger.info(String.format("记本[%s(%s)]共有[%d]条进展", dreamtitle, dreamid, steptotal));
                         }
-
+                        // 获取到的数据如果为空说明已经没有数据了
                         List<Map<String, Object>> list = (List<Map<String, Object>>) data.get("steps");
-                        if (list == null || list.size() == 0) {
+                        if (list == null || list.isEmpty()) {
                             logger.info(String.format("记本[%s(%s)]下载完成", dreamtitle, dreamid));
                             break;
                         } else {
-
-                            // 获取评论
-                            for (Map<String, Object> step : list) {
-                                step.put("stepcomments", new ArrayList<>());
-                                step.put("steplikes", new ArrayList<>());
-                                String stepid = String.valueOf(step.get("sid"));
-                                Integer datacmts = Integer.valueOf(String.valueOf(step.get("comments")));
-                                if (datacmts > 0) {
-                                    List<Map<String, Object>> comments = downloadStepALlComments(stepid, datacmts);
-                                    step.put("stepcomments", comments);
-                                }
-                            }
-
-                            finished += list.size();
-                            steps.addAll(list);
+                            // 保存数据
+                            for (Map<String, Object> step : list)
+                                stepMap.put((String) step.get("sid"), step);
+                            finished = stepMap.size();
                             logger.info(String.format("记本[%s(%s)]第%04d页进展下载成功(%d/%d)", dreamtitle, dreamid, page, finished, steptotal));
-
-                            if (cacheIndex != null) { // 如果没有本地缓存，则不检查，执行全量下载
-                                boolean hasChanged = checkStepPageUpdate(cacheIndex, list);
+                            // 如果没有本地缓存，则不检查，执行全量下载
+                            if (!compareIndex.isEmpty()) {
                                 // 当页数据没有更新，则不再下载后续的进展
+                                boolean hasChanged = checkStepPageUpdate(compareIndex, list);
                                 if (!hasChanged) {
-                                    // 没有更新说明对当前页的数据发生了全部比对
-                                    // 当前页的最后一条进展ID，下一条就是历史数据
-                                    String beginStepId = (String) list.get(list.size() - 1).get("sid");
-                                    boolean ismatched = false;
-                                    for (int i = 0; i < cacheSteps.size(); i++) {
-                                        String sid = (String) cacheSteps.get(i).get("sid");
-                                        if (!ismatched) {
-                                            if (beginStepId.equals(sid)) ismatched = true;
-                                        } else {
-                                            steps.add(cacheSteps.get(i));
-                                        }
-                                    }
-                                    logger.info(String.format("记本[%s(%s)]从本地缓存获取剩余数据(total=%d)", dreamtitle, dreamid, steps.size()));
-                                    break; // exit while
+                                    break;
                                 }
                             }
                         }
@@ -614,9 +596,63 @@ public class NianJsonService {
                         break;
                     }
                 } else {
-                    logger.error(String.format("记本[%s(%s)]第%04d页进展下载失败", dreamtitle, dreamid, page));
+                    logger.error(String.format("记本[%s(%s)]第%04d页进展下载失败：%s", dreamtitle, dreamid, page, entity.getMessage()));
                 }
             }
+
+
+            // 对有更新的进展进行下载评论
+            if (!stepMap.isEmpty()) {
+                /*
+                for (String stepId : stepMap.keySet()) {
+                    Map<String, Object> step = stepMap.get(stepId);
+                    if (!cacheIndex.containsKey(stepId) ||
+                            cacheIndex.containsKey(stepId) && !stepIsSame(cacheIndex.get(stepId), step)) {
+                        logger.info(String.format("下载用户[%s]评论[%s]", userid, stepId));
+                        step.put("stepcomments", new ArrayList<>());
+                        step.put("steplikes", new ArrayList<>());
+                        String stepid = String.valueOf(step.get("sid"));
+                        Integer datacmts = Integer.valueOf(String.valueOf(step.get("comments")));
+                        if (datacmts > 0) {
+                            List<Map<String, Object>> comments = downloadStepALlComments(stepid, datacmts);
+                            step.put("stepcomments", comments);
+                        }
+                    }
+                }
+                */
+
+                cacheIndex.putAll(stepMap);//合并后的数据
+            }
+
+            List<Map<String, Object>> steps = new ArrayList<>();
+            // 合并后的Map数据转换成List
+            for (String stepId : cacheIndex.keySet()) {
+                Map<String, Object> step = cacheIndex.get(stepId);
+                // 多用户编辑的记本，需要下载用户的头像
+                NianImageDownload.download(userid, "head", cacheIndex.get(stepId).get("uid") + ".jpg");
+                steps.add(cacheIndex.get(stepId));
+                String stepid = String.valueOf(step.get("sid"));
+                Integer datacmts = Integer.valueOf(String.valueOf(step.get("comments")));
+                if (datacmts > 0) {
+                    if (!step.containsKey("stepcomments") ||
+                            ((List<Map<String, Object>>) step.get("stepcomments")).size() != datacmts) {
+                        logger.info(String.format("下载记本[%s/%s]评论[%s][TOTAL:%d]", userid, dreamid, stepId, datacmts));
+                        List<Map<String, Object>> comments = downloadStepALlComments(stepid, datacmts);
+                        step.put("stepcomments", comments);
+                    }
+                }
+            }
+            logger.info(String.format("记本[%s(%s)]最新数据与本地缓存进行合并(total=%d)", dreamtitle, dreamid, steps.size()));
+
+            // 对最终的List数据，根据更新日期进行排序
+            Collections.sort(steps, (left, right) -> {
+                if (left == null || right == null) throw new RuntimeException("排序数据不能为空");
+                Long leftval = Long.valueOf((String) left.get("lastdate"));
+                Long rightval = Long.valueOf((String) right.get("lastdate"));
+                if (leftval > rightval) return -1;
+                else if (leftval < rightval) return 1;
+                else return 0;
+            });
 
             dataModel.put("steps", steps);
             return dataModel;
@@ -624,6 +660,31 @@ public class NianJsonService {
             logger.error(String.format("记本[%s]下载异常：%s", dreamid, e.getMessage()));
         }
         return null;
+    }
+
+    /**
+     * 将最新数据根据某些字段的值进行合并
+     *
+     * @param resultData 最终的结果数据
+     * @param newestData 最新数据
+     * @param fieldExpr  字段表达式
+     * @return
+     */
+    public static List<Map<String, Object>> mergeDataMap(
+            List<Map<String, Object>> resultData, List<Map<String, Object>> newestData, String fieldExpr) {
+
+        if (newestData == null || newestData.size() == 0) return resultData;
+        if (resultData == null || resultData.size() == 0) return newestData;
+        Map<String, Map<String, Object>> resultDataMap = new LinkedHashMap<>();
+        for (Map<String, Object> value : resultData)
+            resultDataMap.put(parser.parse(fieldExpr, value), value);
+        for (Map<String, Object> value : newestData)
+            resultDataMap.put(parser.parse(fieldExpr, value), value);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (String key : resultDataMap.keySet())
+            result.add(resultDataMap.get(key));
+        return result;
+
     }
 
     /**

@@ -168,7 +168,7 @@
     <#list steps as step>
     <div class="nian_textblock">
         <div class="nian_headinfo">
-            <span class="nian_stepheadimage"><a href="images/head/${dream.uid}.jpg"><img src="images/thumbs/${dream.uid}.jpg"/></a></span>
+            <span class="nian_stepheadimage"><a href="images/head/${step.uid}.jpg"><img src="images/thumbs/${step.uid}.jpg"/></a></span>
             <span class="nian_stepheadnick">${step.user}</span>
             <p class="nian_stepinfo">评论(${step.comments}), 赞(${step.likes}), ${fdate(step.lastdate)}</p>
         </div>
@@ -185,7 +185,11 @@
         </ul>
         </#if>
         </#if>
+        <#if step.content?length gt 0>
         <p class="nian_stepcontent">${step.content}</p>
+        <#elseif step.type == "1">
+        <p class="nian_stepcontent">[签到]</p>
+        </#if>
         <!--这里需要读取评论-->
         <#if step.stepcomments??>
         <#if step.stepcomments?size gt 0>

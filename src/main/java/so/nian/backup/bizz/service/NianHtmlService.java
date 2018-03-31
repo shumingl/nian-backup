@@ -3,6 +3,7 @@ package so.nian.backup.bizz.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.config.AppConfig;
+import so.nian.backup.utils.ExpressionParser;
 import so.nian.backup.utils.StringUtil;
 
 import java.io.File;
@@ -17,6 +18,7 @@ public class NianHtmlService {
     private static final Logger logger = LoggerFactory.getLogger(NianHtmlService.class);
     private static ThreadPoolExecutor htmlThreadPool;
     private static ThreadPoolExecutor httpThreadPool;
+    private static final ExpressionParser parser = ExpressionParser.getDefault();
 
     public static void startup(int httpSize, int htmlSize) {
 
@@ -126,8 +128,10 @@ public class NianHtmlService {
         Map<String, Object> data = NianJsonService.downloadUserDreams(userid);
         if (data != null) {
             List<Map<String, Object>> dreams = (List<Map<String, Object>>) data.get("dreams");
-            logger.info(String.format("用户[%s(%s)]记本数量：[%d]", username, userid, dreams.size()));
+            logger.info(String.format("用户[%s(%s)]记本数量：[%d][%s]", username, userid, dreams.size(), dreams));
             for (Map<String, Object> dream : dreams) {
+                //logger.info(parser.parse("用户[%s(%s)]开始下载记本[${title}(${id})]", dream));
+                logger.info(String.format("用户[%s(%s)]开始下载记本[%s(%s)]", username, userid, dream.get("title"), dream.get("id")));
                 downloadDream(userid, String.valueOf(dream.get("id")));
             }
             logger.info(String.format("用户[%s(%s)]记本下载完成", username, userid));

@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class NianImageDownload {
 
@@ -42,10 +43,11 @@ public class NianImageDownload {
 
     private static RequestConfig requestConfig = null;
     private static ThreadPoolExecutor imageThreadPool = null;
-    private static List<Map<String, String>> imagesCache = new ArrayList<>();
-    private static Map<String, Integer> failedImages;
+    private static Map<String, Integer> failedImages;//记录失败次数
+    private static Map<String, Integer> imageStatus;//记录图片状态(进行中为0，成功为1，失败为-1)
     private static final int MAX_RETRY = 32;
     private static CloseableHttpClient httpClient;
+    private static final ReentrantLock imageLock = new ReentrantLock();
 
     //自定义重试策略
     private static HttpRequestRetryHandler imageRetryHandler = (exception, executionCount, context) -> {
@@ -69,7 +71,7 @@ public class NianImageDownload {
         requestConfig = RequestConfig.custom()
                 .setConnectTimeout(30000)
                 .setConnectionRequestTimeout(300000)
-                //.setSocketTimeout(300000)
+                .setSocketTimeout(600000)
                 //.setProxy(new HttpHost("127.0.0.1", 8888))
                 .build();
         imageThreadPool = new ThreadPoolExecutor(imageSize, imageSize * 2, 0L, TimeUnit.MILLISECONDS,
@@ -84,6 +86,7 @@ public class NianImageDownload {
                 .setRetryHandler(imageRetryHandler)
                 .build();
         failedImages = new ConcurrentHashMap<>();
+        imageStatus = new ConcurrentHashMap<>();
     }
 
 
@@ -102,36 +105,6 @@ public class NianImageDownload {
     public static void removeFailedImage(String imageinfo) {
         if (failedImages.containsKey(imageinfo))
             failedImages.remove(imageinfo);
-    }
-
-    public static void buildCache() throws IOException {
-        String cachefile = "C:\\data\\app\\app\\imagemaps.txt";
-        List<String> lines = Files.readAllLines(Paths.get(cachefile));
-        imagesCache.add(new HashMap<>());
-        imagesCache.add(new HashMap<>());
-        imagesCache.add(new HashMap<>());
-        imagesCache.add(new HashMap<>());
-        imagesCache.add(new HashMap<>());
-        for (String line : lines) {
-            String vals[] = line.split(";");
-            for (Map<String, String> cache : imagesCache)
-                if (!cache.containsKey(vals[0])) {
-                    cache.put(vals[0], vals[1]);
-                    break;
-                }
-        }
-    }
-
-    public static Map<String, String> takeCache(String key) {
-        Map<String, String> result = new HashMap<>();
-        for (Map<String, String> cache : imagesCache) {
-            if (cache.containsKey(key)) {
-                String fileinfo = cache.get(key);
-                String infos[] = fileinfo.split("#");
-                result.put(infos[0], infos[1]);
-            }
-        }
-        return result;
     }
 
     public static void shutdownPool() {
@@ -158,49 +131,6 @@ public class NianImageDownload {
         }
     }
 
-    public static void downloadFromLocal(String userid, String type, String image, boolean iscover) {
-
-        try {
-            String backupbase = AppConfig.getNianViewsBase();
-            String imagepath = StringUtil.path(backupbase, userid, "images", type, image);
-            File imagefile = new File(imagepath);
-            FileUtil.createParentDirs(imagefile);
-            String key = String.format("%s/%s", type, image);
-
-            // 读取缓存文件
-            Map<String, String> imgs = takeCache(key);
-            if (imgs.size() > 0) {
-                CopyOption[] options = new CopyOption[]{StandardCopyOption.REPLACE_EXISTING};
-                for (String uid : imgs.keySet()) {
-                    String fullname = imgs.get(uid);
-                    File srcfile = new File(fullname);
-                    if (!"thumbs".equals(type)) {
-                        if (!userid.equals(uid) && !fullname.contains("thumbs")) {
-                            if (srcfile.exists()) {
-                                Files.move(Paths.get(fullname), Paths.get(imagepath), options); // 移动文件
-                                logger.info(String.format("MOVE: [%s/%s/%s]", userid, type, image));
-                            } else {
-                                //logger.info(String.format("SKIP: [%s/%s/%s]", userid, type, image));
-                            }
-                        }
-                    } else {
-                        if (!userid.equals(uid) && fullname.contains("thumbs")) {
-                            if (srcfile.exists()) {
-                                Files.move(Paths.get(fullname), Paths.get(imagepath), options); // 移动文件
-                                logger.info(String.format("MOVE: [%s/%s/%s]", userid, type, image));
-                            } else {
-                                //logger.info(String.format("SKIP: [%s/%s/%s]", userid, type, image));
-                            }
-                        }
-                    }
-                }
-            }
-
-        } catch (Exception e) {
-            logger.error(String.format("获取本地图片异常[%s/%s/%s]：%s", userid, type, image, e.getMessage()));
-        }
-    }
-
     public static void download(String userid, String type, String image) {
         download(userid, type, image, false);
     }
@@ -217,8 +147,26 @@ public class NianImageDownload {
         return imageThreadPool;
     }
 
+    public static void setImageStatus(String userid, String type, String image, Integer status) {
+        imageLock.lock();
+        try {
+            String imageKey = String.format("%s/%s/%s", userid, type, image);
+            imageStatus.put(imageKey, status);
+        } finally {
+            imageLock.unlock();
+        }
+    }
+
     public static void download(String userid, String type, String image, boolean iscover) {
-        /*downloadFromLocal(userid, type, image, iscover);*/
+        imageLock.lock();
+        try { // 对图片状态的访问需加锁，否则可能会导致图片重复下载，磁盘高IO
+            String imageKey = String.format("%s/%s/%s", userid, type, image);
+            if (imageStatus.containsKey(imageKey) && imageStatus.get(imageKey) >= 0)// 已经成功的图片不再下载
+                return;
+            imageStatus.put(imageKey, 0);
+        } finally {
+            imageLock.unlock();
+        }
         String backupbase = AppConfig.getNianViewsBase();
         File imagefile = new File(StringUtil.path(backupbase, userid, "images", type, image));
         File thumbsfile = new File(StringUtil.path(backupbase, userid, "images/thumbs", image));
@@ -250,7 +198,7 @@ public class NianImageDownload {
                 request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
                 CloseableHttpResponse response = httpClient.execute(request);
                 if (response != null && response.getEntity().getContent() != null) {
-                    FileUtil.save2image(response.getEntity().getContent(), imagefile);
+                    FileUtil.save2image(response.getEntity().getContent(), imagefile, type);
                     EntityUtils.consume(response.getEntity());
                     response.close();
                 } else {
@@ -296,7 +244,7 @@ public class NianImageDownload {
                 request.setHeader("User-Agent", "NianiOS/5.0.3 (iPhone; iOS 11.2.6; Scale/2.00)");
                 CloseableHttpResponse response = httpClient.execute(request);
                 if (response != null && response.getEntity().getContent() != null) {
-                    FileUtil.save2image(response.getEntity().getContent(), imagefile);
+                    FileUtil.save2image(response.getEntity().getContent(), imagefile, "thumbs");
                     EntityUtils.consume(response.getEntity());
                     response.close();
                 } else {
@@ -344,21 +292,26 @@ class NianImageDownloadWorker extends Thread {
                 if (imageEntity.isSuccess()) {
                     logger.info(String.format("SUCC: [%s/images/%s/%s][%dms]", userid, type, image, end - start));
                     NianImageDownload.removeFailedImage(imginfo);
+                    NianImageDownload.setImageStatus(userid, type, image, 1);//成功
                     succ = true;
                 } else {
+                    NianImageDownload.setImageStatus(userid, type, image, -1);//失败
                     logger.info(String.format("FAIL: [%s/images/%s/%s][%s]", userid, type, image, imageEntity.getMessage()));
                 }
             } else {
+                NianImageDownload.setImageStatus(userid, type, image, -1);//失败
                 logger.info(String.format("FAIL: [%s/thumbs/%s/%s][%s]", userid, type, image, thumbsEntity.getMessage()));
             }
         } catch (Exception e) {
+            NianImageDownload.setImageStatus(userid, type, image, -1);//失败
             logger.info(String.format("FAIL: image=[%s/%s/%s][%s]", userid, type, image, e.getMessage()));
         }
         // 如果下载失败则重新下载并覆盖
         if (!succ) {
             if (NianImageDownload.recordFailedImage(imginfo)) {
-                logger.info(String.format("REDO: image=[%s/%s/%s]", userid, type, image));
+                NianImageDownload.setImageStatus(userid, type, image, -1);//失败
                 NianImageDownload.download(userid, type, image, true);
+                logger.info(String.format("REDO: image=[%s/%s/%s]", userid, type, image));
             } else {
                 logger.info(String.format("SKIP: image=[%s/%s/%s][图片下载尝试次数已超过最大值]", userid, type, image));
             }

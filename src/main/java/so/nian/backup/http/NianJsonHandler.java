@@ -33,15 +33,7 @@ public class NianJsonHandler implements ResponseHandler<HttpResultEntity> {
                 result.setSuccess(false);
                 result.setMessage("转换Map数据为空");
             } else {
-                if(map.containsKey("error")) {
-                    String error = String.valueOf(map.get("error"));
-                    if ("0".equals(error))
-                        result.setSuccess(true);
-                    else
-                        result.setSuccess(false);
-                } else {
-                    result.setSuccess(true);
-                }
+                result.setSuccess(true);
             }
             EntityUtils.consume(entity);
         } else {

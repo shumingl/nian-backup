@@ -33,7 +33,7 @@ public class JsonConverter {
 	public String object2Json(Object objValue) {
 		String rtnValue = null;
 		try {
-			rtnValue = this.objMapper.writeValueAsString(objValue);
+			rtnValue = this.objMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objValue);
 		} catch (Exception ex) {
 			throw new RuntimeException(ex);
 		}
