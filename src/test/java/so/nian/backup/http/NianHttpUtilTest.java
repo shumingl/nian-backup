@@ -39,32 +39,31 @@ public class NianHttpUtilTest {
         System.out.println(sdf.format(new Date(Long.valueOf("1520745888") * 1000)));
     }
 
-    //@Test
+    @Test
     public void load19911Dreams() throws Exception {
         String listpath = "C:\\data\\app\\app\\nian-backup\\nian-cache\\19911\\dreams";
         File listdir = new File(listpath);
-        File[] files = listdir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                if (name.endsWith(".json") && !name.endsWith("-info.json"))
-                    return true;
-                return false;
-            }
+        File[] files = listdir.listFiles((dir, name) -> {
+            if (name.endsWith(".json") && !name.endsWith("-info.json"))
+                return true;
+            return false;
         });
         ExpressionParser parser = ExpressionParser.getDefault();
         List<Map<String, Object>> dreams = new ArrayList<>();
-        for (File file : files) {
-            //System.out.println(file.getCanonicalPath());
-            byte[] bytes = Files.readAllBytes(Paths.get(file.getCanonicalPath()));
-            String json = new String(bytes, "UTF-8");
-            Map<String, Object> jsonObj = JsonUtil.json2Map(json);
-            System.out.println(parser.parse("${id},${title},${image},${percent}", jsonObj.get("dream")));
-            Map<String, Object> dream = new LinkedHashMap<>();
-            dream.put("id", StringUtil.MAPGET(jsonObj, "dream/id"));
-            dream.put("title", StringUtil.MAPGET(jsonObj, "dream/title"));
-            dream.put("image", StringUtil.MAPGET(jsonObj, "dream/image"));
-            dream.put("percent", StringUtil.MAPGET(jsonObj, "dream/percent"));
-            dreams.add(dream);
+        if (files != null) {
+            for (File file : files) {
+                //System.out.println(file.getCanonicalPath());
+                byte[] bytes = Files.readAllBytes(Paths.get(file.getCanonicalPath()));
+                String json = new String(bytes, "UTF-8");
+                Map<String, Object> jsonObj = JsonUtil.json2Map(json);
+                System.out.println(parser.parse("${id},${title},${image},${percent}", jsonObj.get("dream")));
+                Map<String, Object> dream = new LinkedHashMap<>();
+                dream.put("id", StringUtil.MAPGET(jsonObj, "dream/id"));
+                dream.put("title", StringUtil.MAPGET(jsonObj, "dream/title"));
+                dream.put("image", StringUtil.MAPGET(jsonObj, "dream/image"));
+                dream.put("percent", StringUtil.MAPGET(jsonObj, "dream/percent"));
+                dreams.add(dream);
+            }
         }
         System.out.println(JsonUtil.object2Json(dreams));
     }

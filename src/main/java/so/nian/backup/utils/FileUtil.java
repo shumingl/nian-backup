@@ -3,15 +3,13 @@ package so.nian.backup.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.config.AppConfig;
+import so.nian.backup.utils.jackson.JsonUtil;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.CopyOption;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.nio.file.*;
 
 public class FileUtil {
 
@@ -50,6 +48,38 @@ public class FileUtil {
             }
         }
 
+    }
+
+    public static String readAll(File file) {
+        return readAll(file, "UTF-8");
+    }
+
+    public static String readAll(File file, String encode) {
+        if (file == null || !file.exists())
+            return null;
+        try {
+            byte[] bytes = Files.readAllBytes(Paths.get(file.getCanonicalPath()));
+            return new String(bytes, encode);
+        } catch (Exception e) {
+            logger.error("读取文件错误[{}]: {}", file.getAbsolutePath(), e.getMessage());
+        }
+        return null;
+    }
+
+    public static void writeJson(File file, Object object) {
+        writeJson(file, object, "UTF-8");
+    }
+
+    public static void writeJson(File file, Object object, String encode) {
+        try {
+            if (file == null)
+                throw new IOException("文件对象不能为空");
+            OpenOption[] options = new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.WRITE};
+            String json = JsonUtil.object2Json(object);
+            Files.write(Paths.get(file.getCanonicalPath()), (json == null ? "" : json).getBytes(encode), options);
+        } catch (Exception e) {
+            logger.error("写入文件错误: {}", e.getMessage());
+        }
     }
 
     public static void createParentDirs(File file) {

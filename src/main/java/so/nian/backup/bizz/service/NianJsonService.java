@@ -6,6 +6,7 @@ import so.nian.backup.config.AppConfig;
 import so.nian.backup.http.HttpResultEntity;
 import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.http.NianImageDownload;
+import so.nian.backup.utils.DataUtil;
 import so.nian.backup.utils.ExpressionParser;
 import so.nian.backup.utils.FileUtil;
 import so.nian.backup.utils.StringUtil;
@@ -331,12 +332,12 @@ public class NianJsonService {
                 Map<String, Object> userinfo = (Map<String, Object>) data.get("user");
                 if (userinfo != null && userinfo.get("uid") != null) { //有些不存在的UserID下载的数据uid是null
                     // 下载用户关注和粉丝
-                    /*logger.info("下载用户关注[{}]", userid);
+                    logger.info("下载用户关注[{}]", userid);
                     List<Map<String, Object>> care = downloadUserCareOrFans(userid, "care");
                     logger.info("下载用户粉丝[{}]", userid);
                     List<Map<String, Object>> fans = downloadUserCareOrFans(userid, "fans");
                     userinfo.put("care", care);
-                    userinfo.put("fans", fans);*/
+                    userinfo.put("fans", fans);
                     String cachebase = NianJsonService.getCachePath(userid, "cache");
                     String userpath = StringUtil.path(cachebase, "user.json");
                     FileUtil.createParentDirs(new File(userpath));
@@ -386,7 +387,7 @@ public class NianJsonService {
                 data = (Map<String, Object>) entity.getResponseMap().get("data");
                 //使用新数据覆盖掉缓存旧数据
                 if (dreamsCache != null && data != null)
-                    NianJsonService.mergeDataMap((List<Map<String, Object>>) dreamsCache.get("dreams"), (List<Map<String, Object>>) data.get("dreams"), "${id}");
+                    DataUtil.merge((List<Map<String, Object>>) dreamsCache.get("dreams"), (List<Map<String, Object>>) data.get("dreams"), "${id}");
 
                 String basepath = NianJsonService.getCachePath(userid, "cache");
                 String fullname = StringUtil.path(basepath, "dreams.json");
@@ -660,31 +661,6 @@ public class NianJsonService {
             logger.error(String.format("记本[%s]下载异常：%s", dreamid, e.getMessage()));
         }
         return null;
-    }
-
-    /**
-     * 将最新数据根据某些字段的值进行合并
-     *
-     * @param resultData 最终的结果数据
-     * @param newestData 最新数据
-     * @param fieldExpr  字段表达式
-     * @return
-     */
-    public static List<Map<String, Object>> mergeDataMap(
-            List<Map<String, Object>> resultData, List<Map<String, Object>> newestData, String fieldExpr) {
-
-        if (newestData == null || newestData.size() == 0) return resultData;
-        if (resultData == null || resultData.size() == 0) return newestData;
-        Map<String, Map<String, Object>> resultDataMap = new LinkedHashMap<>();
-        for (Map<String, Object> value : resultData)
-            resultDataMap.put(parser.parse(fieldExpr, value), value);
-        for (Map<String, Object> value : newestData)
-            resultDataMap.put(parser.parse(fieldExpr, value), value);
-        List<Map<String, Object>> result = new ArrayList<>();
-        for (String key : resultDataMap.keySet())
-            result.add(resultDataMap.get(key));
-        return result;
-
     }
 
     /**
