@@ -1,6 +1,7 @@
 package so.nian.backup.export;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.util.NumberUtils;
 import so.nian.backup.config.AppConfig;
 import so.nian.backup.config.logback.LogbackConfigure;
 import so.nian.backup.utils.DataUtil;
@@ -26,8 +27,7 @@ public class DreamRecovery {
             // 列出视图目录下的所有USERID
             File[] userdirs = cachebasedir.listFiles((dir, name) -> {
                 try {
-                    Integer userId = Integer.valueOf(name);
-                    if (userId == null) return false;
+                    Integer.valueOf(name);
                     return true;
                 } catch (Exception e) {
                     return false;
@@ -85,6 +85,7 @@ public class DreamRecovery {
                     result.put("perPage", 20);
                     result.put("dreams", unionMap);
                     //FileUtil.writeJson(dreamsFile, result);
+                    System.out.println(result);
 
                     System.out.println("————————————————————————————————————————————————————————————");
                 }
