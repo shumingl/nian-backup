@@ -18,8 +18,8 @@ public class DreamRecovery {
     public static void main(String[] args) {
         try {
             startup();
-            String cachebase = "C:\\data\\app\\app\\nian-backup\\nian-cache";
-            String viewsbase = "C:\\data\\app\\app\\nian-backup\\nian-views";
+            String cachebase = "/data/app/app/nian-backup/nian-cache";
+            String viewsbase = "/data/app/app/nian-backup/nian-views";
 
             File viewsbasedir = new File(viewsbase);
             File cachebasedir = new File(cachebase);
