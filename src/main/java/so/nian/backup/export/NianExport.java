@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import so.nian.backup.bizz.service.NianHtmlService;
 import so.nian.backup.bizz.service.NianJsonService;
+import so.nian.backup.config.AppConstants;
 import so.nian.backup.startup.NianBackupStartup;
 import so.nian.backup.utils.StringUtil;
 import so.nian.backup.utils.jackson.JsonUtil;
@@ -16,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"unchecked"})
 public class NianExport {
 
     private static Logger logger = null;
@@ -71,21 +73,21 @@ public class NianExport {
             for (Map<String, Object> exp : exports) {
                 String type = String.valueOf(exp.get("type"));
                 List<String> list = (List<String>) exp.get("list");
-                if ("user".equals(type)) {
+                if (AppConstants.TASK_TYPE_USER.equals(type)) {
                     for (String userinfo : list) {
                         String[] infos = userinfo.split("#");
-                        if ("html".equals(render))
+                        if (AppConstants.RENDER_TYPE_HTML.equals(render))
                             NianHtmlService.downloadForUser(infos[0]);
-                        if ("json".equals(render))
+                        if (AppConstants.RENDER_TYPE_JSON.equals(render))
                             NianJsonService.downloadForUser(infos[0]);
                     }
-                } else if ("dream".equals(type)) {
+                } else if (AppConstants.TASK_TYPE_DREAM.equals(type)) {
                     for (String dreaminfo : list) {
                         String[] dreams = dreaminfo.split("#");
                         String[] infos = dreams[0].split(":");
-                        if ("html".equals(render))
+                        if (AppConstants.RENDER_TYPE_HTML.equals(render))
                             NianHtmlService.downloadDream(infos[0], infos[1]);
-                        if ("html".equals(render))
+                        if (AppConstants.RENDER_TYPE_JSON.equals(render))
                             NianJsonService.downloadDream(infos[0], infos[1]);
                     }
                 }

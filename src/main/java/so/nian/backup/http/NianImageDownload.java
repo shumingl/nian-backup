@@ -158,6 +158,8 @@ public class NianImageDownload {
     }
 
     public static void download(String userid, String type, String image, boolean iscover) {
+        String model = AppConfig.getNianRenderModel();
+        if ("offline".equals(model)) return;
         imageLock.lock();
         try { // 对图片状态的访问需加锁，否则可能会导致图片重复下载，磁盘高IO
             String imageKey = String.format("%s/%s/%s", userid, type, image);

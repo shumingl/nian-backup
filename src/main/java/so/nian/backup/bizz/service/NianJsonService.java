@@ -3,6 +3,7 @@ package so.nian.backup.bizz.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import so.nian.backup.config.AppConfig;
+import so.nian.backup.config.AppConstants;
 import so.nian.backup.http.HttpResultEntity;
 import so.nian.backup.http.NianHttpUtil;
 import so.nian.backup.http.NianImageDownload;
@@ -147,7 +148,6 @@ public class NianJsonService {
         if (userid == null) {
             throw new RuntimeException("[downloadForUser]登录信息为空");
         }
-        String model = AppConfig.getNianRenderModel();
         // 创建用户目录
         NianJsonService.createUserDirs(userid);
         String basepath = NianJsonService.getCachePath(userid, "cache");
@@ -156,11 +156,14 @@ public class NianJsonService {
 
         // 下载用户信息
         Map<String, Object> userdata = NianJsonService.downloadUserInfo(userid);
+        String username = "";
         if (userdata != null) {
-            String username = StringUtil.MAPGET(userdata, "user/name");
-            // 下载用户的记本
-            downloadDreams(username, userid);
+            username = (String) userdata.get("name");
+        } else {
+            username = userid;
         }
+        // 下载用户的记本
+        downloadDreams(username, userid);
     }
 
     /**
@@ -225,7 +228,7 @@ public class NianJsonService {
             }
 
             String model = AppConfig.getNianRenderModel();
-            if ("online".equals(model)) { // ONLINE模式生成记本内容
+            if (AppConstants.RENDER_MODEL_ONLINE.equals(model)) { // ONLINE模式生成记本内容
                 String dreamtitle = StringUtil.MAPGET(dataModel, "dream/title");
                 jsonThreadPool.execute(new NianDreamJsonWorker(userid, dreamtitle, dreamid, dataModel));
             }
@@ -256,7 +259,7 @@ public class NianJsonService {
             Map<String, Object> httpjson = NianJsonService.downloadFirstPageSteps(dreamid);
             if (httpjson != null && httpjson.size() > 0) {
                 Map<String, Object> httpdream = (Map<String, Object>) httpjson.get("dream");
-                Map<String, Object> localdream = NianJsonService.takeoutCache(userid, dreamid, "dinfo");
+                Map<String, Object> localdream = NianJsonService.takeoutCache(userid, dreamid, AppConstants.CACHE_TYPE_DREAMINFO);
                 if (localdream == null || localdream.size() == 0)
                     return true;
 
@@ -304,7 +307,7 @@ public class NianJsonService {
     public static Map<String, Object> downloadFromLocal(String userid, String dreamid) {
         Map<String, Object> data = null;
         try {
-            data = NianJsonService.takeoutCache(userid, dreamid, "dream");
+            data = NianJsonService.takeoutCache(userid, dreamid, AppConstants.CACHE_TYPE_DREAMDATA);
         } catch (Exception e) {
             logger.error(String.format("[%s/%s]读解析本地记本数据错误：%s", userid, dreamid, e.getMessage()));
         }
@@ -323,13 +326,14 @@ public class NianJsonService {
         NianImageDownload.download(userid, "head", userid + ".jpg");
         // 获取数据
         String model = AppConfig.getNianRenderModel();
-        Map<String, Object> data = null;
-        if ("online".equals(model)) {
+        String cachebase = NianJsonService.getCachePath(userid, "cache");
+        Map<String, Object> userinfo = null;
+        if (AppConstants.RENDER_MODEL_ONLINE.equals(model)) {
             logger.info("下载用户信息[{}]", userid);
             HttpResultEntity info = NianHttpUtil.info(userid);
             if (info != null && info.isSuccess()) {
-                data = (Map<String, Object>) info.getResponseMap().get("data");
-                Map<String, Object> userinfo = (Map<String, Object>) data.get("user");
+                Map<String, Object> data = (Map<String, Object>) info.getResponseMap().get("data");
+                userinfo = (Map<String, Object>) data.get("user");
                 if (userinfo != null && userinfo.get("uid") != null) { //有些不存在的UserID下载的数据uid是null
                     // 下载用户关注和粉丝
                     logger.info("下载用户关注[{}]", userid);
@@ -338,31 +342,28 @@ public class NianJsonService {
                     List<Map<String, Object>> fans = downloadUserCareOrFans(userid, "fans");
                     userinfo.put("care", care);
                     userinfo.put("fans", fans);
-                    String cachebase = NianJsonService.getCachePath(userid, "cache");
                     String userpath = StringUtil.path(cachebase, "user.json");
-                    FileUtil.createParentDirs(new File(userpath));
-                    String json = JsonUtil.object2Json(userinfo);
-                    Files.write(Paths.get(userpath), json.getBytes("UTF-8"));
+                    FileUtil.writeJson(new File(userpath), userinfo);
                 }
             } else {
                 logger.error(String.format("获取用户信息失败[%s]", userid));
             }
-        } else if ("offline".equals(model)) {
-            String cachebase = NianJsonService.getCachePath(userid, "cache");
+            return userinfo;
+        } else if (AppConstants.RENDER_MODEL_OFFLINE.equals(model)) {
             String userpath = StringUtil.path(cachebase, "user.json");
             File userfile = new File(userpath);
             if (userfile.exists()) {
                 try {
-                    byte[] bytes = Files.readAllBytes(Paths.get(userpath));
-                    String userjson = new String(bytes, "UTF-8");
-                    data = JsonUtil.json2Map(userjson);
-                } catch (IOException e) {
+                    String userjson = FileUtil.readAll(userfile);
+                    userinfo = JsonUtil.json2Map(userjson);
+                } catch (Exception e) {
                     logger.error("获取本地用户文件[{}/user.json]错误：{}", userid, e.getMessage());
                 }
             }
-        } else
+            return userinfo;
+        } else {
             throw new RuntimeException("[downloadUserInfo]参数错误：nian.render.model[online/offline]");
-        return data;
+        }
     }
 
     /**
@@ -375,13 +376,13 @@ public class NianJsonService {
 
         Map<String, Object> dreamsCache = null;
         try {
-            dreamsCache = NianJsonService.takeoutCache(userid, null, "list");
+            dreamsCache = NianJsonService.takeoutCache(userid, null, AppConstants.CACHE_TYPE_DREAMLIST);
         } catch (IOException e) {
             logger.error("获取本地记本缓存[{}/dreams.json]错误：{}", userid, e.getMessage());
         }
         String model = AppConfig.getNianRenderModel();
         Map<String, Object> data = null;
-        if ("online".equals(model)) {
+        if (AppConstants.RENDER_MODEL_ONLINE.equals(model)) {
             HttpResultEntity entity = NianHttpUtil.dreams(userid);
             if (entity != null && entity.isSuccess()) {
                 data = (Map<String, Object>) entity.getResponseMap().get("data");
@@ -391,21 +392,12 @@ public class NianJsonService {
 
                 String basepath = NianJsonService.getCachePath(userid, "cache");
                 String fullname = StringUtil.path(basepath, "dreams.json");
-                FileUtil.createParentDirs(new File(fullname));
+                FileUtil.writeJson(new File(fullname), dreamsCache);
 
-                // 保存记本列表信息
-                String datajson = JsonUtil.object2Json(dreamsCache);
-                if (datajson != null) {
-                    try {
-                        Files.write(Paths.get(fullname), datajson.getBytes("UTF-8"));
-                    } catch (IOException e) {
-                        logger.error("写入本地记本列表[{}/dreams.json]错误：{}", userid, e.getMessage());
-                    }
-                }
             }
             if (dreamsCache != null)
                 data = dreamsCache;
-        } else if ("offline".equals(model)) {
+        } else if (AppConstants.RENDER_MODEL_OFFLINE.equals(model)) {
             data = dreamsCache;
         } else
             throw new RuntimeException("[downloadUserDreams]参数错误：nian.render.model[online/offline]");
@@ -432,9 +424,9 @@ public class NianJsonService {
         // 获取数据
         String model = AppConfig.getNianRenderModel();
         Map<String, Object> data;
-        if ("online".equals(model))
+        if (AppConstants.RENDER_MODEL_ONLINE.equals(model))
             data = downloadFromApi(userid, dreamid);
-        else if ("offline".equals(model))
+        else if (AppConstants.RENDER_MODEL_OFFLINE.equals(model))
             data = downloadFromLocal(userid, dreamid);
         else
             throw new RuntimeException("参数错误：nian.render.model[online/offline]");
@@ -466,27 +458,6 @@ public class NianJsonService {
         }
 
         return data;
-    }
-
-    private static void buildDreamStepIndex(String userid, String dreamid, Map<String, Object> dreamSteps) {
-        if (dreamSteps == null || dreamSteps.size() == 0)
-            return;
-        List<Map<String, Object>> steps = (List<Map<String, Object>>) dreamSteps.get("steps");
-        if (steps == null)
-            return;
-        Map<String, Object> index = new HashMap<>();
-        for (Map<String, Object> step : steps) {
-            String stepid = (String) step.get("sid");
-            index.put(stepid, step);
-        }
-        String cachepath = NianJsonService.getCachePath(userid, "dream");
-        String indexpath = StringUtil.path(cachepath, dreamid + "-index.json");
-        String indexjson = JsonUtil.object2Json(index);
-        try {
-            Files.write(Paths.get(indexpath), indexjson.getBytes("UTF-8"));
-        } catch (IOException e) {
-            logger.error(String.format("[%s/%s]创建索引失败：%s", userid, dreamid, e.getMessage()));
-        }
     }
 
     public static boolean stepIsSame(Map<String, Object> left, Map<String, Object> right) {
@@ -535,7 +506,7 @@ public class NianJsonService {
             // 本地缓存
             Map<String, String> compareIndex = null;
             Map<String, Map<String, Object>> cacheIndex = null;
-            Map<String, Object> dreamCache = NianJsonService.takeoutCache(userid, dreamid, "dream");
+            Map<String, Object> dreamCache = NianJsonService.takeoutCache(userid, dreamid, AppConstants.CACHE_TYPE_DREAMDATA);
             List<Map<String, Object>> cacheSteps = null;
             compareIndex = new LinkedHashMap<>();
             cacheIndex = new LinkedHashMap<>();
@@ -808,13 +779,13 @@ public class NianJsonService {
      */
     public static Map<String, Object> takeoutCache(String userid, String dreamid, String type) throws IOException {
         String filename;
-        if ("user".equals(type)) {
+        if (AppConstants.CACHE_TYPE_USERINFO.equals(type)) {
             filename = StringUtil.path(getCachePath(userid, "cache"), "user.json");
-        } else if ("list".equals(type)) {
+        } else if (AppConstants.CACHE_TYPE_DREAMLIST.equals(type)) {
             filename = StringUtil.path(getCachePath(userid, "cache"), "dreams.json");
-        } else if ("dream".equals(type)) {
+        } else if (AppConstants.CACHE_TYPE_DREAMDATA.equals(type)) {
             filename = StringUtil.path(getCachePath(userid, "dream"), dreamid + ".json");
-        } else if ("dinfo".equals(type)) {
+        } else if (AppConstants.CACHE_TYPE_DREAMINFO.equals(type)) {
             filename = StringUtil.path(getCachePath(userid, "dream"), dreamid + "-info.json");
         } else {
             return null;

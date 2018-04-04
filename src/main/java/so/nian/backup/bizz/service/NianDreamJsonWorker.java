@@ -37,14 +37,9 @@ public class NianDreamJsonWorker extends Thread {
             FileUtil.createParentDirs(file);
 
             String summaryfile = StringUtil.path(basepath, dreamid + "-info.json");
-
-            String sjson = JsonUtil.object2Json(dataModel.get("dream"));
-            byte[] sbytes = sjson.getBytes("UTF-8");
-            Files.write(Paths.get(summaryfile), sbytes);
-
-            String json = JsonUtil.object2Json(dataModel);
-            byte[] bytes = json.getBytes("UTF-8");
-            Files.write(Paths.get(fullname), bytes);
+            FileUtil.writeJson(new File(summaryfile), dataModel.get("dream"));
+            FileUtil.writeJson(file, dataModel);
+            
             logger.info(String.format("记本[%s(%s)]数据存储完成", dreamtitle, dreamid));
         } catch (Exception e) {
             logger.error(String.format("记本[%s(%s)]数据存储失败: [%s]", dreamtitle, dreamid, e.getMessage()));

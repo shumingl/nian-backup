@@ -74,6 +74,7 @@ public class FileUtil {
         try {
             if (file == null)
                 throw new IOException("文件对象不能为空");
+            createParentDirs(file);// 父级目录不存在则创建
             OpenOption[] options = new OpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.WRITE};
             String json = JsonUtil.object2Json(object);
             Files.write(Paths.get(file.getCanonicalPath()), (json == null ? "" : json).getBytes(encode), options);
