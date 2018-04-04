@@ -68,9 +68,8 @@
         .nian_dreaminfo {
             /*font-family: Consolas, '宋体', serif;*/
             font-size: 11pt;
-            margin-left: 10px;
+            margin: 15px 0px 0px 10px;
             color : #646464;
-            padding-top: 0px;
         }
         .nian_booknotice {
             /*font-family: Consolas, '宋体', serif;*/
@@ -103,8 +102,9 @@
         }
         .nian_stepcomment {
             /*font-family: Consolas, '宋体', serif;*/
-            margin: 15px 0px 15px 0px;
-            font-size: 11pt;
+            margin: 5px 0px 5px 0px;
+            font-size: 10pt;
+            line-height : 2;
             color : #161616;
             white-space: pre-wrap;
             -ms-word-wrap: break-word;

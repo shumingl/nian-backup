@@ -16,7 +16,7 @@ import java.util.*;
 public class NianHttpUtilTest {
     LogConsole logger = LogConsole.getInstance();
 
-    @Test
+    //@Test
     public void login() throws Exception {
         //HttpResultEntity result = NianHttpUtil.login("1373521108@qq.com", "leaves89@163");
         //HttpResultEntity result = NianHttpUtil.login("1192858440@qq.com", "102385753");
