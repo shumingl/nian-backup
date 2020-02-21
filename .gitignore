@@ -33,7 +33,7 @@ proguard/
 .gradletasknamecache
 .gradle/
 build/
-bin/
+.settings/
 
 #PMTS SubProjects
 pmts-*/build/

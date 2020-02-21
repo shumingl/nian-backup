@@ -7,6 +7,7 @@ apply from: "$rootProject.projectDir/dependencies.gradle"
 apply from: "$rootProject.projectDir/utils.gradle"
 
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
